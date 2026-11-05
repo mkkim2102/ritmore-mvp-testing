@@ -4,7 +4,6 @@ import type { Product } from "@/lib/types"
 
 export type Feature = { no: string; title: string; body: string }
 export type Review = { name: string; score: string; date: string; product: string; body: string }
-export type Faq = { q: string; a: string }
 
 export type Landing = {
   eyebrow: string
@@ -13,20 +12,8 @@ export type Landing = {
   flavors: string[]
   features: Feature[]
   reviews: Review[]
-  faqs: Faq[]
   shipping: string
 }
-
-const faqs: Faq[] = [
-  {
-    q: "언제 배송되나요?",
-    a: "배송 기간은 주문 화면의 안내를 따릅니다.",
-  },
-  {
-    q: "반품할 수 있나요?",
-    a: "반품과 교환은 주문 화면의 안내를 따릅니다.",
-  },
-]
 
 const reviews: Review[] = [
   {
@@ -102,7 +89,6 @@ const stories: Record<string, Landing> = {
     flavors: [],
     features: PRODUCT_DETAIL_COPY.features,
     reviews,
-    faqs: PRODUCT_DETAIL_COPY.faqs,
     shipping: PRODUCT_DETAIL_COPY.shipping,
   },
 }
@@ -121,7 +107,6 @@ export function landingFor(product: Product): Landing {
         { no: "03", title: "안내", body: "배송과 교환, 환불은 주문 화면의 안내를 따릅니다." },
       ],
       reviews,
-      faqs,
       shipping: "배송비와 배송 기간은 주문 화면의 안내를 따릅니다.",
     }
   )

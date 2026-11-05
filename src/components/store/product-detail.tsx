@@ -15,6 +15,19 @@ import { landingFor } from "@/lib/landing"
 import { guideSections } from "@/lib/shop-guide"
 import type { Offer, Product } from "@/lib/types"
 
+function StarRow({ score }: { score: string }) {
+  const value = Math.max(0, Math.min(5, Math.round(Number(score) || 0)))
+  return (
+    <span className="inline-flex tracking-[0.12em]" aria-hidden>
+      {Array.from({ length: 5 }, (_, star) => (
+        <span key={star} className={star < value ? "text-[#111111]" : "text-[#d4d4d4]"}>
+          ★
+        </span>
+      ))}
+    </span>
+  )
+}
+
 export function ProductDetail({
   product,
   offer,
@@ -41,6 +54,20 @@ export function ProductDetail({
     ? (reviewScores.reduce((sum, score) => sum + score, 0) / reviewScores.length).toFixed(1)
     : null
   const reviewSummary = reviewScore ? `평점 ${reviewScore} / 5, 후기 ${reviewCount}개` : `후기 ${reviewCount}개`
+  const previewReviews = [
+    ...storedReviews.map((review) => ({
+      key: review.id,
+      name: review.name || "익명",
+      score: review.score.toFixed(1),
+      body: review.body,
+    })),
+    ...landing.reviews.map((review, reviewIndex) => ({
+      key: `${review.name}-${review.date}-${reviewIndex}`,
+      name: review.name,
+      score: review.score,
+      body: review.body,
+    })),
+  ].slice(0, 3)
 
   return (
     <ProductBuyProvider
@@ -93,54 +120,38 @@ export function ProductDetail({
           </div>
 
           <div className="mx-auto mt-6 max-w-6xl space-y-6 px-4 lg:mt-8 lg:max-w-none lg:px-0">
-            <ol className="space-y-3 border-t border-border pt-4">
-              {landing.features.map((feature) => (
-                <li key={feature.no} className="grid grid-cols-[2.5rem_1fr] gap-2 text-sm">
-                  <span className="font-medium text-muted-foreground">{feature.no}</span>
-                  <span>
-                    <span className="font-medium">{feature.title}</span>
-                    <span className="mt-1 block text-muted-foreground">{feature.body}</span>
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-        <aside className="hidden lg:block">
-          <div data-buy-rail className="lg:sticky lg:top-20 lg:z-10">
-            <div className="space-y-6 bg-white lg:max-h-[calc(100svh-6.5rem)] lg:overflow-y-auto lg:overscroll-contain lg:pb-4">
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {landing.badges.map((badge) => (
-                  <span key={badge} className="rounded-full border border-border px-2.5 py-1 text-[11px] text-[#111111]">
-                    {badge}
-                  </span>
-                ))}
-              </div>
-              <p className="flex items-center gap-1.5 text-xs text-[#111111]">
-                <TinMark />
-                {landing.eyebrow}
-              </p>
-              <p className="font-serif text-4xl leading-tight font-normal text-[#111111]">
-                <SelectedProductTitle />
-              </p>
-            </div>
-            <BuyPanel shippingAnchor />
-            <p className="text-sm text-muted-foreground">{reviewSummary}</p>
-            <p className="leading-7">{landing.promise}</p>
+            <div className="space-y-3 border-t border-border pt-4" data-review-preview>
+              <a href="#reviews" className="flex flex-wrap items-center gap-2 text-sm text-[#111111]">
+                <StarRow score={reviewScore ?? "0"} />
+                <span>{reviewSummary}</span>
+              </a>
+              {previewReviews.length > 0 ? (
+                <ul className="space-y-3">
+                  {previewReviews.map((review) => (
+                    <li key={review.key} className="text-sm">
+                      <p className="flex items-center gap-2">
+                        <span className="font-medium">{review.name}</span>
+                        <StarRow score={review.score} />
+                      </p>
+                      <p className="mt-1 text-muted-foreground">{review.body}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">후기를 남길 수 있습니다.</p>
+              )}
             </div>
           </div>
-        </aside>
-        <div className="min-w-0 lg:col-span-2">
+        <div className="min-w-0">
       <nav className="sticky top-14 z-10 border-y border-border bg-background/95 backdrop-blur md:top-16">
-        <div className="mx-auto flex max-w-6xl gap-6 overflow-x-auto px-4 text-sm lg:max-w-none lg:px-0">
+        <div className="mx-auto grid max-w-6xl grid-cols-4 px-4 text-sm lg:max-w-none lg:px-0">
           {[
             ["#detail", "상세"],
-            ["#purchase", "구매안내"],
             ["#reviews", "후기"],
+            ["#purchase", "구매안내"],
             ["#faq", "문의"],
           ].map(([href, label]) => (
-            <a key={href} href={href} className="border-b-2 border-transparent py-3 whitespace-nowrap hover:border-foreground">
+            <a key={href} href={href} className="flex justify-center border-b-2 border-transparent py-3 whitespace-nowrap hover:border-foreground">
               {label}
             </a>
           ))}
@@ -174,25 +185,6 @@ export function ProductDetail({
         ) : null}
       </section>
 
-      <section id="purchase" className="scroll-mt-40 border-t border-border bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-14 lg:max-w-none lg:px-0">
-          <p className="text-xs font-medium text-muted-foreground">구매안내</p>
-          <h2 className="mt-2 font-serif text-3xl text-[#111111]">배송, 교환, 환불</h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {guideSections
-              .filter((section) => section.id !== "order")
-              .map((section) => (
-                <article key={section.id} id={section.id} className="scroll-mt-40">
-                  <h3 className="font-medium text-[#111111]">{section.title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    {section.id === "ship" && sharedCopy ? landing.shipping : section.body}
-                  </p>
-                </article>
-              ))}
-          </div>
-        </div>
-      </section>
-
       <section id="reviews" className="scroll-mt-40 border-t border-border bg-card" data-review-count={reviewCount}>
         <div className="mx-auto max-w-6xl px-4 py-14 lg:max-w-none lg:px-0">
           <div className="flex items-end justify-between gap-4">
@@ -200,7 +192,10 @@ export function ProductDetail({
               <p className="text-xs font-medium text-muted-foreground">후기</p>
               <h2 className="mt-2 font-serif text-3xl">먹어 본 이야기</h2>
             </div>
-            <p className="text-sm text-muted-foreground">{reviewSummary}</p>
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              {reviewScore ? <StarRow score={reviewScore} /> : null}
+              <span>{reviewSummary}</span>
+            </p>
           </div>
           {reviewCount === 0 ? (
             <p className="mt-8 text-sm leading-6 text-muted-foreground" data-review-empty>
@@ -233,7 +228,25 @@ export function ProductDetail({
         </div>
       </section>
 
-      <section id="faq" className="mx-auto max-w-6xl scroll-mt-40 px-4 py-14 lg:max-w-none lg:px-0">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 items-start border-t border-border lg:max-w-none lg:grid-cols-2 lg:gap-x-12">
+      <section id="purchase" className="scroll-mt-40 bg-white px-4 py-14 lg:min-w-0 lg:px-0">
+          <p className="text-xs font-medium text-muted-foreground">구매안내</p>
+          <h2 className="mt-2 font-serif text-3xl text-[#111111]">배송, 교환, 환불</h2>
+          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-1">
+            {guideSections
+              .filter((section) => section.id !== "order")
+              .map((section) => (
+                <article key={section.id} id={section.id} className="scroll-mt-40">
+                  <h3 className="font-medium text-[#111111]">{section.title}</h3>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    {section.id === "ship" && sharedCopy ? landing.shipping : section.body}
+                  </p>
+                </article>
+              ))}
+          </div>
+      </section>
+
+      <section id="faq" className="scroll-mt-40 border-t border-border px-4 py-14 lg:min-w-0 lg:border-t-0 lg:px-0">
         <p className="text-xs font-medium text-muted-foreground">문의</p>
         <h2 className="mt-2 font-serif text-3xl">문의</h2>
         {inquiries.length === 0 ? (
@@ -265,18 +278,38 @@ export function ProductDetail({
           </div>
         )}
         <InquiryForm slug={product.slug} />
-        {landing.faqs.length > 0 ? (
-          <div className="mt-12 divide-y divide-border border-y border-border">
-            {landing.faqs.map((faq) => (
-              <details key={faq.q} className="group py-4">
-                <summary className="cursor-pointer font-medium">{faq.q}</summary>
-                <p className="pt-3 text-sm leading-6 text-muted-foreground">{faq.a}</p>
-              </details>
-            ))}
-          </div>
-        ) : null}
       </section>
+      </div>
         </div>
+        </div>
+        <aside className="hidden lg:block">
+          <div data-buy-rail className="lg:sticky lg:top-20 lg:z-10">
+            <div className="space-y-6 bg-white lg:max-h-[calc(100svh-6.5rem)] lg:overflow-y-auto lg:overscroll-contain lg:pb-4">
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {landing.badges.map((badge) => (
+                    <span key={badge} className="rounded-full border border-border px-2.5 py-1 text-[11px] text-[#111111]">
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+                <p className="flex items-center gap-1.5 text-xs text-[#111111]">
+                  <TinMark />
+                  {landing.eyebrow}
+                </p>
+                <p className="font-serif text-4xl leading-tight font-normal text-[#111111]">
+                  <SelectedProductTitle />
+                </p>
+              </div>
+              <BuyPanel shippingAnchor />
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                {reviewScore ? <StarRow score={reviewScore} /> : null}
+                <span>{reviewSummary}</span>
+              </p>
+              <p className="leading-7">{landing.promise}</p>
+            </div>
+          </div>
+        </aside>
       </div>
       <MobileBuyBar step="상세" revealWhenCtaLeaves />
     </ProductBuyProvider>

@@ -23,12 +23,12 @@ export async function generateMetadata({
   })
 }
 
-function ChoicePhoto({ src, alt }: { src: string; alt: string }) {
+function ChoicePhoto({ src, alt, focus }: { src: string; alt: string; focus?: string }) {
   const path = src.trim()
   if (path) {
     return (
       <div data-choice-photo="image" className="aspect-square w-full shrink-0 overflow-hidden">
-        <img src={path} alt={alt} className="h-full w-full object-cover" />
+        <img src={path} alt={alt} className="h-full w-full object-cover" style={focus ? { objectPosition: focus } : undefined} />
       </div>
     )
   }
@@ -54,12 +54,12 @@ export default async function ProductsPage() {
   return (
     <div className="bg-white text-[#111111]">
       <Tracker step="catalog_view" />
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:py-12">
-        <h1 className="text-2xl leading-tight text-[#111111] lg:text-3xl">상품</h1>
+      <div className="mx-auto w-full max-w-[58rem] px-4 py-6 lg:py-9">
+        <h1 className="text-xl leading-tight text-[#111111] lg:text-2xl">상품</h1>
         {choices.length === 0 ? (
           <p className="mt-8 text-[#111111]">보이는 상품이 없습니다.</p>
         ) : (
-          <div className="mt-6 grid grid-cols-2 items-stretch gap-3" data-choice-grid>
+          <div className="mt-4 grid grid-cols-2 items-stretch gap-2 lg:grid-cols-3 lg:gap-2.5" data-choice-grid>
             {choices.map((item) => {
               const photo = listPhotoFor(item.slug)
               return (
@@ -70,15 +70,19 @@ export default async function ProductsPage() {
                   data-choice-slug={item.slug}
                   className="flex h-full flex-col overflow-hidden border border-solid border-[#e5e5e5] bg-white text-[#111111] shadow-none"
                 >
-                  <ChoicePhoto src={photo.src} alt={`${item.name} ${item.label}`.trim()} />
-                  <div className="flex flex-1 flex-col px-3 pt-3 pb-3 sm:px-4">
-                    <p className="text-base font-medium text-[#111111]" data-tablet-count>
+                  <ChoicePhoto
+                    src={photo.src}
+                    alt={`${item.name} ${item.label}`.trim()}
+                    focus={item.slug === "sample-a" ? "center 8%" : undefined}
+                  />
+                  <div className="flex flex-1 flex-col px-2.5 pt-2 pb-2.5 sm:px-3">
+                    <p className="text-sm font-medium text-[#111111]" data-tablet-count>
                       {packChoiceLabel(tinCountForSlug(item.slug) ?? 1)}
                     </p>
-                    <p className="mt-2 text-sm leading-snug text-[#111111]" data-choice-name>
+                    <p className="mt-1 text-[13px] leading-snug text-[#111111]" data-choice-name>
                       {item.name}
                     </p>
-                    <div className="mt-auto pt-3">
+                    <div className="mt-auto pt-2">
                       <PriceTag price={item.price} compareAt={item.compareAt} size="card" sellingLabel="할인가" />
                     </div>
                   </div>

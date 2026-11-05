@@ -133,8 +133,9 @@ function OriginNight(props: SceneProps) {
       >
         <p className={cn(copySize, "w-full max-w-5xl leading-[1.7]")} style={{ color: whiteInk }}>
           <Wordmark className="mr-[0.3em] inline-block h-[1.28em] w-auto translate-y-[0.06em]" />
+          는
           <br />
-          는 다섯 명의 고려대 학생으로부터 시작되었습니다.
+          다섯 명의 고려대 학생으로부터 시작되었습니다.
         </p>
       </div>
       <div
@@ -275,8 +276,9 @@ function Propose(props: SceneProps) {
       <div className={copySize}>
         <p className="leading-[1.7]" style={{ color }}>
           <Wordmark className="mr-[0.3em] inline-block h-[1.28em] w-auto translate-y-[0.06em]" />
+          는
           <br />
-          는 카페인을 고르는 새로운 방식을 제안합니다.
+          카페인을 고르는 새로운 방식을 제안합니다.
         </p>
         <div className="mt-8 sm:mt-10">
           <Line color={color}>커피나 에너지드링크를 마신 이후에도,</Line>
