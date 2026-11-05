@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   itemsQuery,
@@ -49,21 +49,42 @@ function rememberBuys(lines: QuoteLine[]) {
   }
 }
 
-export function CartView() {
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
+function snapshotFromLines(lines: QuoteLine[]): Snapshot | null {
+  if (lines.length === 0) return null
+  return {
+    items: lines.map((line) => ({ slug: line.slug, qty: line.qty })),
+    lines,
+  }
+}
+
+export function CartView({ initialLines = [] }: { initialLines?: QuoteLine[] }) {
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(() => snapshotFromLines(initialLines))
   const [error, setError] = useState("")
   const [version, setVersion] = useState(0)
+  const showingPrice = useRef(initialLines.length > 0)
+  const initialLinesRef = useRef(initialLines)
+  initialLinesRef.current = initialLines
+
+  function keepPriceOrFail() {
+    if (showingPrice.current) return
+    setError("가격을 불러오지 못했습니다. 새로고침해 주세요.")
+  }
 
   useEffect(() => {
     const controller = new AbortController()
     let active = true
-    const stored = readCart()
+    const fromStorage = readCart()
+    const stored =
+      fromStorage.length > 0
+        ? fromStorage
+        : initialLinesRef.current.map((line) => ({ slug: line.slug, qty: line.qty }))
+    if (stored.length > 0) writeCart(stored)
 
     if (stored.length === 0) {
       const frame = window.requestAnimationFrame(() => {
         if (!active) return
         setError("")
-        setSnapshot({ items: [], lines: [] })
+        setSnapshot((current) => (current && current.lines.length > 0 ? current : { items: [], lines: [] }))
       })
       return () => {
         active = false
@@ -84,6 +105,7 @@ export function CartView() {
         if (!active) return
         const latest = readCart()
         if (latest.length === 0) {
+          showingPrice.current = false
           setError("")
           setSnapshot({ items: [], lines: [] })
           return
@@ -93,15 +115,16 @@ export function CartView() {
           .filter((line) => qtyBySlug.has(line.slug))
           .map((line) => ({ ...line, qty: qtyBySlug.get(line.slug) ?? line.qty }))
         if (lines.length === 0) {
-          setError("가격을 불러오지 못했습니다. 새로고침해 주세요.")
+          keepPriceOrFail()
           return
         }
+        showingPrice.current = true
         setError("")
         setSnapshot({ items: latest, lines })
       })
       .catch((reason: unknown) => {
         if (!active || isAbort(reason)) return
-        setError("가격을 불러오지 못했습니다. 새로고침해 주세요.")
+        keepPriceOrFail()
       })
 
     return () => {

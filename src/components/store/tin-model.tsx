@@ -31,7 +31,7 @@ export function TinModel({
   return (
     <div data-tin-stage className="relative h-full w-full bg-white">
       {createElement("model-viewer", {
-        src: "/models/ritmore-tin.glb?v=2",
+        src: "/models/ritmore-tin.glb?v=3",
         alt: label,
         "camera-controls": interactive ? "" : undefined,
         "disable-zoom": zoomOff ? "" : undefined,
