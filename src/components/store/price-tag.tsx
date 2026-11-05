@@ -35,8 +35,8 @@ export function PriceTag({
   const list = compareAt != null ? compareAt * count : null
   const rateClass =
     size === "lg" || size === "total"
-      ? "text-lg font-semibold tabular-nums text-[#111111]"
-      : "text-sm font-semibold tabular-nums text-[#111111]"
+      ? "text-lg font-semibold tabular-nums text-[#e10600]"
+      : "text-sm font-semibold tabular-nums text-[#e10600]"
 
   return (
     <p

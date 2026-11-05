@@ -117,59 +117,76 @@ function Opening(props: SceneProps) {
   )
 }
 
-function OriginNight(props: SceneProps) {
-  const whiteInk = inkFor(WHITE)
-  const navyInk = inkFor(NAVY)
+function Origin(props: SceneProps) {
+  const ink = inkFor(WHITE)
   return (
     <section
       {...props}
-      data-brand-scene="origin-night"
-      className="absolute inset-0 flex min-h-0 flex-col overflow-hidden"
+      data-brand-scene="origin"
+      data-brand-band="origin"
+      className="absolute inset-0 overflow-hidden"
+      style={{ color: ink }}
     >
-      <div
-        data-brand-band="origin"
-        className="flex h-[43%] shrink-0 items-center justify-center px-5 text-center sm:px-8"
-        style={{ backgroundColor: WHITE, color: whiteInk }}
-      >
-        <p className={cn(copySize, "w-full max-w-5xl leading-[1.7]")} style={{ color: whiteInk }}>
-          <Wordmark className="mr-[0.3em] inline-block h-[1.28em] w-auto translate-y-[0.06em]" />
-          는
-          <br />
-          다섯 명의 고려대 학생으로부터 시작되었습니다.
-        </p>
-      </div>
-      <div
-        data-brand-band="night"
-        className="flex min-h-0 flex-1 items-start justify-center overflow-hidden px-5 pt-6 pb-3 text-center sm:px-8 sm:pt-8 sm:pb-5 lg:pt-10 lg:pb-6"
-        style={{ backgroundColor: NAVY, color: navyInk }}
-      >
-        <div className={cn(copySize, "w-full max-w-5xl space-y-3.5 sm:space-y-7 lg:space-y-8")}>
-          <div>
-            <Line color={navyInk} className="leading-[1.45] sm:leading-[1.65]">
+      <img
+        src="/brand/korea-gate.jpg"
+        alt=""
+        aria-hidden
+        draggable={false}
+        className="pointer-events-none absolute inset-0 h-full w-full select-none"
+        style={{ objectFit: "cover", objectPosition: "center 60%" }}
+      />
+      <div className="relative z-10 flex h-full min-h-0 items-center justify-center px-5 text-center sm:px-8">
+        <div
+          className={cn(copySize, "py-2 sm:py-3")}
+          style={{
+            width: "fit-content",
+            maxWidth: "min(64rem, calc(100% + 1.5rem))",
+            marginInline: "-0.75rem",
+            paddingInline: "0.75rem",
+          }}
+        >
+          <p className="leading-[1.7]" style={{ color: ink }}>
+            <Wordmark className="mr-[0.3em] inline-block h-[1.28em] w-auto translate-y-[0.06em]" />
+            <span className="inline-block translate-y-[0.33em]">는</span>
+            <br />
+            다섯 명의 고려대 학생으로부터 시작되었습니다.
+          </p>
+          <div className="mt-2 sm:mt-3">
+            <Line color={ink} className="leading-[1.45] sm:leading-[1.65]">
               학회 발표를 준비하며 밤늦게까지 함께하던 다섯 명.
             </Line>
-            <Line color={navyInk} className="leading-[1.45] sm:leading-[1.65]">
+            <Line color={ink} className="leading-[1.45] sm:leading-[1.65]">
               끝내야 할 일은 남아 있었고,
             </Line>
-            <Line color={navyInk} className="leading-[1.45] sm:leading-[1.65]">
+            <Line color={ink} className="leading-[1.45] sm:leading-[1.65]">
               우리는 항상 커피나 에너지 드링크와 함께 했습니다.
             </Line>
           </div>
-          <Line color={navyInk} className="leading-[1.45] sm:leading-[1.65]">
-            하지만 <span className="underline decoration-2 underline-offset-[0.22em]">필요한 만큼만</span>{" "}
-            카페인을 섭취하기는 어려웠습니다.
-          </Line>
-          <div>
-            <Line color={navyInk} className="leading-[1.45] sm:leading-[1.65]">
-              카페인을 너무 많이 먹어 가슴이 두근거렸고,
-            </Line>
-            <Line color={navyInk} className="leading-[1.45] sm:leading-[1.65]">
-              음료를 마셔 화장실에 가느라 자리를 자주 비웠고,
-            </Line>
-            <Line color={navyInk} className="leading-[1.45] sm:leading-[1.65]">
-              일을 마치고 집에 돌아가도 쉽게 잠들지 못했습니다.
-            </Line>
-          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Night(props: SceneProps) {
+  const color = inkFor(NAVY)
+  return (
+    <section
+      {...props}
+      data-brand-scene="night"
+      data-brand-band="night"
+      className="absolute inset-0 flex min-h-0 items-center justify-center overflow-hidden px-5 py-16 text-center sm:px-8 sm:py-20"
+      style={{ backgroundColor: NAVY, color }}
+    >
+      <div className={cn(copySize, "w-full max-w-5xl space-y-6 sm:space-y-8 lg:space-y-10")}>
+        <Line color={color}>
+          하지만 <span className="underline decoration-2 underline-offset-[0.22em]">필요한 만큼만</span>{" "}
+          카페인을 섭취하기는 어려웠습니다.
+        </Line>
+        <div>
+          <Line color={color}>카페인을 너무 많이 먹어 가슴이 두근거렸고,</Line>
+          <Line color={color}>음료를 마셔 화장실에 가느라 자리를 자주 비웠고,</Line>
+          <Line color={color}>일을 마치고 집에 돌아가도 쉽게 잠들지 못했습니다.</Line>
         </div>
       </div>
     </section>
@@ -276,7 +293,7 @@ function Propose(props: SceneProps) {
       <div className={copySize}>
         <p className="leading-[1.7]" style={{ color }}>
           <Wordmark className="mr-[0.3em] inline-block h-[1.28em] w-auto translate-y-[0.06em]" />
-          는
+          <span className="inline-block translate-y-[0.33em]">는</span>
           <br />
           카페인을 고르는 새로운 방식을 제안합니다.
         </p>
@@ -310,16 +327,18 @@ export function BrandStory() {
   const phone = usePhoneBrand()
 
   /*
-   * 2는 1과 같은 흰 배경이 장면의 위 43%를 차지하고, 그 안에 시작 문장이 있다.
-   * 남색 밤 이야기는 그 아래, 같은 장면에 붙는다.
-   * 4는 새 사진과 라임 조절 문장만이다. 넓은 화면에서는 한 화면을 좌우로 나눈다.
-   * 핸드폰(1024px 미만)에서는 그 장면만 사진 전체 너비, 이어서 라임 글 페이지로 나뉜다.
+   * 여는 문장 다음은 고려대 정문 사진이 화면을 채우는 시작 장면이고,
+   * 그 다음이 남색 밤 이야기다. 둘은 한 화면에 같이 나오지 않는다.
+   * 이어서 양 문장, 그리고 사진과 라임 조절 문장.
+   * 넓은 화면에서는 조절을 한 화면 좌우로 나누고,
+   * 핸드폰(1024px 미만)에서는 사진 전체 너비 다음 라임 글 페이지로 나눈다.
    * 그 다음 장은 흰 배경의 새로운 방식 문장이고, 아이스 닫는 장이 마지막이다.
    */
   return (
     <SceneDeck>
       <Opening data-scene-background={WHITE} />
-      <OriginNight data-scene-background={WHITE} />
+      <Origin data-scene-background={WHITE} />
+      <Night data-scene-background={NAVY} />
       <Amount data-scene-background={WHITE} />
       {phone ? <RegulatePhoto data-scene-background={PHOTO_MAT} /> : null}
       {phone ? (

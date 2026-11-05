@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { CartButton } from "@/components/store/cart-button"
+import { buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 export function StoreHeader() {
   return (
@@ -12,6 +14,16 @@ export function StoreHeader() {
           <Link href="/brand">브랜드</Link>
           <Link href="/products">상품</Link>
           <CartButton />
+          <Link
+            href="/products"
+            data-header-buy
+            className={cn(
+              buttonVariants({ size: "lg" }),
+              "hidden h-12 min-w-48 border-[#17364A] bg-[#17364A] px-6 text-base text-white hover:bg-[#17364A]/90 lg:inline-flex",
+            )}
+          >
+            구매하러가기
+          </Link>
         </nav>
       </header>
     </div>

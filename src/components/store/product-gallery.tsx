@@ -1,7 +1,7 @@
 "use client"
 
 import { useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
-import { TinModel } from "@/components/store/tin-model"
+import { TIN_DETAIL_ORBIT, TinModel } from "@/components/store/tin-model"
 import type { DetailSlide } from "@/lib/product-slides"
 import { cn } from "@/lib/utils"
 
@@ -14,7 +14,7 @@ function isModelTarget(target: EventTarget | null) {
 export function ProductGallery({
   slides,
   name,
-  aspectClass = "aspect-[5/4] lg:aspect-[4/5]",
+  aspectClass = "aspect-square",
   className,
 }: {
   slides: DetailSlide[]
@@ -158,7 +158,7 @@ export function ProductGallery({
                   interactive
                   disableZoom
                   hint={false}
-                  orbit="32deg 68deg auto"
+                  orbit={TIN_DETAIL_ORBIT}
                   label={`${name}. 페퍼민트 12개입 슬라이드 틴`}
                 />
               ) : (

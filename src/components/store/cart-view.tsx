@@ -239,7 +239,10 @@ export function CartView({ initialLines = [] }: { initialLines?: QuoteLine[] }) 
       <a
         href={`/project?items=${itemsQuery(snapshot.lines)}`}
         data-cart-buy="project"
-        className={cn(buttonVariants(), "h-12 w-full px-4 sm:w-auto")}
+        className={cn(
+          buttonVariants(),
+          "h-12 w-full border-[#17364A] bg-[#17364A] px-4 text-white hover:bg-[#17364A]/90 sm:w-auto",
+        )}
         onClick={() => rememberBuys(snapshot.lines)}
       >
         구매하기

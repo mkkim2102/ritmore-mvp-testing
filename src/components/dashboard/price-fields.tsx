@@ -69,7 +69,12 @@ export function PriceFields({
         정가 {listValue != null ? won(listValue) : listText.trim() === "" ? "없음" : "—"}
         {separator}
         실판매가 {sellingValue != null ? won(sellingValue) : "—"}
-        {rate != null ? `${separator}${rate}%` : ""}
+        {rate != null ? (
+          <>
+            {separator}
+            <span className="text-[#e10600]">{`${rate}%`}</span>
+          </>
+        ) : null}
       </p>
     </>
   )

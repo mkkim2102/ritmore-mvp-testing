@@ -64,12 +64,12 @@ export default async function HomePage() {
                   />
                 </Link>
               </div>
-              <div className="mx-auto mt-2 w-full max-w-6xl shrink-0 px-4 lg:px-8">
+              <div className="mx-auto mt-2 w-full max-w-6xl shrink-0 px-4 lg:hidden">
                 <Link
                   href="/products"
                   className={cn(
                     buttonVariants({ size: "lg" }),
-                    "pointer-events-auto h-12 w-full px-6 text-base lg:w-auto lg:min-w-48",
+                    "pointer-events-auto h-12 w-full border-[#17364A] bg-[#17364A] px-6 text-base text-white hover:bg-[#17364A]/90",
                   )}
                 >
                   구매하러가기

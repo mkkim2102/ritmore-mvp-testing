@@ -86,7 +86,7 @@ export function ProductDetail({
       <ReviewTracker productSlug={product.slug} />
       <div
         data-product-frame
-        className="lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(18rem,0.95fr)] lg:items-stretch lg:gap-x-8 lg:px-4 lg:py-8"
+        className="lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,10fr)_minmax(14rem,3.5fr)] lg:items-stretch lg:gap-x-8 lg:px-4 lg:py-8"
       >
         <div className="px-4 pt-4 lg:col-span-2 lg:px-0 lg:pt-0">
           <Link href="/products" className="text-sm text-[#111111] underline underline-offset-4">
@@ -99,9 +99,7 @@ export function ProductDetail({
               <ProductGallery
                 slides={detailSlidesFor(product.slug)}
                 name={product.name}
-                aspectClass={
-                  product.slug === "sample-a-6" ? "aspect-[4/3]" : "aspect-[5/4] lg:aspect-[4/5]"
-                }
+                aspectClass="aspect-square"
                 className="rounded-2xl lg:rounded-3xl"
               />
               <div className="lg:hidden">
@@ -282,31 +280,31 @@ export function ProductDetail({
       </div>
         </div>
         </div>
-        <aside className="hidden lg:block">
-          <div data-buy-rail className="lg:sticky lg:top-20 lg:z-10">
-            <div className="space-y-6 bg-white lg:max-h-[calc(100svh-6.5rem)] lg:overflow-y-auto lg:overscroll-contain lg:pb-4">
-              <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
+        <aside className="hidden min-w-0 lg:block">
+          <div data-buy-rail className="min-w-0 lg:sticky lg:top-20 lg:z-10">
+            <div className="min-w-0 space-y-6 bg-white lg:max-h-[calc(100svh-6.5rem)] lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:pb-4">
+              <div className="min-w-0 space-y-3">
+                <div className="flex max-w-full flex-wrap gap-2">
                   {landing.badges.map((badge) => (
-                    <span key={badge} className="rounded-full border border-border px-2.5 py-1 text-[11px] text-[#111111]">
+                    <span key={badge} className="rounded-full border border-border px-2.5 py-1 text-[11px] break-words text-[#111111]">
                       {badge}
                     </span>
                   ))}
                 </div>
-                <p className="flex items-center gap-1.5 text-xs text-[#111111]">
+                <p className="flex min-w-0 items-center gap-1.5 text-xs break-words text-[#111111]">
                   <TinMark />
                   {landing.eyebrow}
                 </p>
-                <p className="font-serif text-4xl leading-tight font-normal text-[#111111]">
+                <p className="min-w-0 font-serif text-4xl leading-tight font-normal break-words text-[#111111]">
                   <SelectedProductTitle />
                 </p>
               </div>
               <BuyPanel shippingAnchor />
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <p className="flex min-w-0 flex-wrap items-center gap-2 text-sm break-words text-muted-foreground">
                 {reviewScore ? <StarRow score={reviewScore} /> : null}
                 <span>{reviewSummary}</span>
               </p>
-              <p className="leading-7">{landing.promise}</p>
+              <p className="break-words leading-7">{landing.promise}</p>
             </div>
           </div>
         </aside>

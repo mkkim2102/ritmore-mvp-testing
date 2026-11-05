@@ -1,4 +1,4 @@
-import { TinModel } from "@/components/store/tin-model"
+import { TIN_DETAIL_ORBIT, TinModel } from "@/components/store/tin-model"
 import { cn } from "@/lib/utils"
 
 const LID = { main: "/products/ritmore-lid.png", extra: "/products/ritmore-lid.png" }
@@ -47,7 +47,7 @@ export function ProductFace({
     <div data-tone={tone} className={cn("overflow-hidden bg-white", aspectClass, className)}>
       <TinModel
         interactive={interactive}
-        orbit={shot === "extra" ? "12deg 58deg auto" : "32deg 68deg auto"}
+        orbit={shot === "extra" ? "12deg 58deg auto" : TIN_DETAIL_ORBIT}
         label={alt ?? `${name}. 페퍼민트 12개입 슬라이드 틴`}
       />
     </div>

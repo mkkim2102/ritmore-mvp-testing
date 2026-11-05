@@ -23,7 +23,7 @@ export function CartButton() {
       장바구니
       <span
         data-cart-count={count}
-        className="min-w-6 rounded-full bg-primary px-1.5 py-0.5 text-center text-xs text-primary-foreground tabular-nums"
+        className="min-w-6 rounded-full bg-[#17364A] px-1.5 py-0.5 text-center text-xs text-white tabular-nums"
       >
         {count}
       </span>

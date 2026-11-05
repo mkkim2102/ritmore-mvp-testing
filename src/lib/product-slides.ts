@@ -1,4 +1,4 @@
-/** 상세 첫 화면 사진. 한 장 더 넣을 때는 이 배열 끝에 항목을 추가한다. */
+/** 상세 갤러리 공통 슬라이드. 3D 틴이 첫 화면이고, 사진은 뒤에 둔다. */
 export type DetailSlide =
   | { id: string; kind: "model" }
   | { id: string; kind: "image"; src: string; alt: string; fit?: "contain" | "cover" }
@@ -38,14 +38,15 @@ export function coverPhotoFor(slug: string) {
 export function detailSlidesFor(slug: string): DetailSlide[] {
   const cover = COVER_PHOTOS[slug]
   if (!cover) return PRODUCT_DETAIL_SLIDES
-  return [
-    {
-      id: `${slug}-cover`,
-      kind: "image",
-      src: cover.src,
-      alt: cover.alt,
-      fit: slug === SIX_PACK_SLUG ? "cover" : "contain",
-    },
-    ...PRODUCT_DETAIL_SLIDES,
-  ]
+  const model = PRODUCT_DETAIL_SLIDES.find((slide) => slide.kind === "model")
+  const photos = PRODUCT_DETAIL_SLIDES.filter((slide) => slide.kind !== "model")
+  const coverSlide: DetailSlide = {
+    id: `${slug}-cover`,
+    kind: "image",
+    src: cover.src,
+    alt: cover.alt,
+    fit: "cover",
+  }
+  // 첫 화면은 기울인 3D 틴. 팩 사진과 나머지 컷은 그 다음 슬라이드다.
+  return model ? [model, coverSlide, ...photos] : [coverSlide, ...photos]
 }

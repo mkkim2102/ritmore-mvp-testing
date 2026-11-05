@@ -71,7 +71,14 @@ export default async function ProductsAdminPage({
                 정가 {product.compareAtPrice != null ? won(product.compareAtPrice) : "없음"}
                 {" · "}
                 실판매가 {won(product.basePrice)}
-                {rate != null ? ` · ${rate}%` : ""}. 링크가 실판매가를 고정하지 않으면 이 금액이 보입니다.
+                {rate != null ? (
+                  <>
+                    {" · "}
+                    <span className="text-[#e10600]">{`${rate}%`}</span>
+                  </>
+                ) : null}
+                {". "}
+                링크가 실판매가를 고정하지 않으면 이 금액이 보입니다.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
