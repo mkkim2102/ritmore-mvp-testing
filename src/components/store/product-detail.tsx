@@ -45,11 +45,8 @@ export function ProductDetail({
   const sharedCopy = isTinFamily(product.slug)
   const storedReviews = listReviews(communityKey(product.slug))
   const inquiries = listInquiries(communityKey(product.slug))
-  const reviewCount = storedReviews.length + landing.reviews.length
-  const reviewScores = [
-    ...storedReviews.map((review) => review.score),
-    ...landing.reviews.map((review) => Number(review.score)),
-  ].filter((score) => Number.isFinite(score))
+  const reviewCount = storedReviews.length
+  const reviewScores = storedReviews.map((review) => review.score).filter((score) => Number.isFinite(score))
   const reviewScore = reviewScores.length
     ? (reviewScores.reduce((sum, score) => sum + score, 0) / reviewScores.length).toFixed(1)
     : null
@@ -57,12 +54,14 @@ export function ProductDetail({
   const previewReviews = [
     ...storedReviews.map((review) => ({
       key: review.id,
+      sample: false,
       name: review.name || "익명",
       score: review.score.toFixed(1),
       body: review.body,
     })),
     ...landing.reviews.map((review, reviewIndex) => ({
       key: `${review.name}-${review.date}-${reviewIndex}`,
+      sample: true,
       name: review.name,
       score: review.score,
       body: review.body,
@@ -120,7 +119,7 @@ export function ProductDetail({
           <div className="mx-auto mt-6 max-w-6xl space-y-6 px-4 lg:mt-8 lg:max-w-none lg:px-0">
             <div className="space-y-3 border-t border-border pt-4" data-review-preview>
               <a href="#reviews" className="flex flex-wrap items-center gap-2 text-sm text-[#111111]">
-                <StarRow score={reviewScore ?? "0"} />
+                {reviewScore ? <StarRow score={reviewScore} /> : null}
                 <span>{reviewSummary}</span>
               </a>
               {previewReviews.length > 0 ? (
@@ -130,6 +129,7 @@ export function ProductDetail({
                       <p className="flex items-center gap-2">
                         <span className="font-medium">{review.name}</span>
                         <StarRow score={review.score} />
+                        {review.sample ? <span className="text-xs text-muted-foreground">예시 후기</span> : null}
                       </p>
                       <p className="mt-1 text-muted-foreground">{review.body}</p>
                     </li>
@@ -192,7 +192,7 @@ export function ProductDetail({
               <span>{reviewSummary}</span>
             </p>
           </div>
-          {reviewCount === 0 ? (
+          {reviewCount === 0 && landing.reviews.length === 0 ? (
             <p className="mt-8 text-sm leading-6 text-muted-foreground" data-review-empty>
               후기를 남길 수 있습니다.
             </p>
