@@ -256,7 +256,10 @@ function migrate(db: DatabaseSync) {
       ease TEXT NOT NULL,
       second_press TEXT NOT NULL,
       intent TEXT NOT NULL,
-      note TEXT NOT NULL
+      note TEXT NOT NULL,
+      like_note TEXT NOT NULL DEFAULT '',
+      check_note TEXT NOT NULL DEFAULT '',
+      when_note TEXT NOT NULL DEFAULT ''
     );
 
     CREATE TABLE IF NOT EXISTS reviews (
@@ -289,6 +292,9 @@ function migrate(db: DatabaseSync) {
   ensureColumn(db, "events", "qty", "INTEGER")
   ensureColumn(db, "links", "price_override", "INTEGER")
   ensureColumn(db, "inquiries", "is_private", "INTEGER NOT NULL DEFAULT 0")
+  ensureColumn(db, "surveys", "like_note", "TEXT NOT NULL DEFAULT ''")
+  ensureColumn(db, "surveys", "check_note", "TEXT NOT NULL DEFAULT ''")
+  ensureColumn(db, "surveys", "when_note", "TEXT NOT NULL DEFAULT ''")
   db.exec("CREATE INDEX IF NOT EXISTS idx_events_referrer_class ON events(referrer_class);")
   db.exec("CREATE INDEX IF NOT EXISTS idx_events_visitor ON events(visitor_id, created_at);")
 }

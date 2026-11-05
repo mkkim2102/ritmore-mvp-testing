@@ -3,14 +3,22 @@ import { parseItems, priceLines } from "@/lib/catalog"
 import { getRequestContext } from "@/lib/request"
 import { classifyReferrer } from "@/lib/referrer"
 import { saveSurvey } from "@/lib/survey"
-import { BUY_LIKES, BUY_REASONS, OTHER_REASON } from "@/lib/survey-options"
+import { BUY_CHECKS, BUY_LIKES, BUY_REASONS, OTHER_CHECK, OTHER_LIKE, OTHER_REASON } from "@/lib/survey-options"
 
 const bodySchema = z.object({
   items: z.string().max(200).optional(),
   reason: z.enum(BUY_REASONS),
   likes: z.array(z.enum(BUY_LIKES)).max(2),
   other: z.string().max(500).optional(),
+  likeOther: z.string().max(500).optional(),
+  checks: z.array(z.enum(BUY_CHECKS)).max(2),
+  checkOther: z.string().max(500).optional(),
+  when: z.string().max(500).optional(),
 })
+
+function unique<T>(values: T[]) {
+  return [...new Set(values)]
+}
 
 export async function POST(request: Request) {
   const json = await request.json().catch(() => null)
@@ -25,11 +33,15 @@ export async function POST(request: Request) {
   }
 
   const lines = priceLines(parseItems(parsed.data.items), context.touch)
-  const likes = [...new Set(parsed.data.likes)]
-  if (likes.length !== parsed.data.likes.length) {
+  const likes = unique(parsed.data.likes)
+  const checks = unique(parsed.data.checks)
+  if (likes.length !== parsed.data.likes.length || checks.length !== parsed.data.checks.length) {
     return Response.json({ ok: false, error: "설문 형식이 맞지 않습니다." }, { status: 400 })
   }
   const other = parsed.data.reason === OTHER_REASON ? (parsed.data.other ?? "").trim() : ""
+  const likeOther = likes.includes(OTHER_LIKE) ? (parsed.data.likeOther ?? "").trim() : ""
+  const checkOther = checks.includes(OTHER_CHECK) ? (parsed.data.checkOther ?? "").trim() : ""
+  const whenNote = (parsed.data.when ?? "").trim()
   const qty = lines.reduce((sum, line) => sum + line.qty, 0)
   const total = lines.reduce((sum, line) => sum + line.offer.price * line.qty, 0)
   saveSurvey({
@@ -43,8 +55,11 @@ export async function POST(request: Request) {
     price: lines.length === 1 ? lines[0].offer.price : lines.length > 1 ? total : null,
     ease: parsed.data.reason,
     secondPress: likes.join(" · "),
-    intent: "",
+    intent: checks.join(" · "),
     note: other,
+    likeNote: likeOther,
+    checkNote: checkOther,
+    whenNote,
   })
 
   return Response.json({ ok: true })

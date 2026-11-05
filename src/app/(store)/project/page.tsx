@@ -1,9 +1,6 @@
 import type { Metadata } from "next"
 import { ProjectSurvey } from "@/components/store/project-survey"
 import { Tracker } from "@/components/store/tracker"
-import { parseItems, priceLines } from "@/lib/catalog"
-import { won } from "@/lib/format"
-import { getRequestContext } from "@/lib/request"
 import { publicMetadata } from "@/lib/seo"
 
 const INTRO = [
@@ -27,9 +24,6 @@ export default async function ProjectPage({
 }) {
   const query = await searchParams
   const raw = Array.isArray(query.items) ? query.items[0] : query.items
-  const context = await getRequestContext()
-  const lines = priceLines(parseItems(raw), context.touch)
-  const total = lines.reduce((sum, line) => sum + line.offer.price * line.qty, 0)
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8 px-4 py-10 sm:px-6 sm:py-14">
@@ -42,37 +36,6 @@ export default async function ProjectPage({
           <p key={paragraph}>{paragraph}</p>
         ))}
       </div>
-
-      {lines.length === 0 ? (
-        <p className="text-sm leading-6 text-muted-foreground" data-order-summary>
-          수량을 고르지 않고 이 페이지에 왔습니다.
-        </p>
-      ) : (
-        <div className="space-y-3 border-t border-[#e5e5e5] pt-4 text-sm leading-6" data-order-summary>
-          <ul className="space-y-2">
-            {lines.map((line) => (
-              <li
-                key={line.product.slug}
-                data-order-line={line.product.slug}
-                className="flex items-start justify-between gap-3"
-              >
-                <span>
-                  {line.product.name}
-                  <span className="text-muted-foreground"> × {line.qty}</span>
-                </span>
-                <span className="shrink-0 tabular-nums">{won(line.offer.price * line.qty)}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="flex items-end justify-between gap-3 border-t border-[#e5e5e5] pt-3">
-            <p>합계</p>
-            <p className="text-lg font-semibold tabular-nums" data-order-total={total}>
-              {won(total)}
-            </p>
-          </div>
-          <p className="text-muted-foreground">이 금액은 결제되지 않습니다.</p>
-        </div>
-      )}
 
       <section className="space-y-6">
         <div className="space-y-2">

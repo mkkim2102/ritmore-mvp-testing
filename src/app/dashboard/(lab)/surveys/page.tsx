@@ -59,7 +59,8 @@ export default function SurveysPage() {
                 <TableHead>출처</TableHead>
                 <TableHead>구매 이유</TableHead>
                 <TableHead>마음에 든 점</TableHead>
-                <TableHead>의향</TableHead>
+                <TableHead>확인하고 싶은 점</TableHead>
+                <TableHead>언제</TableHead>
                 <TableHead className="text-right">수량</TableHead>
                 <TableHead className="text-right">금액</TableHead>
                 <TableHead>말</TableHead>
@@ -73,10 +74,21 @@ export default function SurveysPage() {
                   <TableCell className="text-xs">{row.link_code || row.referrer_class || "직접"}</TableCell>
                   <TableCell className="max-w-xs whitespace-normal">{row.ease}</TableCell>
                   <TableCell className="max-w-xs whitespace-normal">{row.second_press}</TableCell>
-                  <TableCell>{row.intent}</TableCell>
+                  <TableCell className="max-w-xs whitespace-normal">
+                    {row.intent ? <span className="block">{row.intent}</span> : null}
+                    {row.check_note ? (
+                      <span className="block">{row.intent ? `기타: ${row.check_note}` : row.check_note}</span>
+                    ) : null}
+                  </TableCell>
+                  <TableCell className="max-w-xs whitespace-normal">{row.when_note}</TableCell>
                   <TableCell className="text-right tabular-nums">{row.qty ?? ""}</TableCell>
                   <TableCell className="text-right tabular-nums">{surveyAmount(row)}</TableCell>
-                  <TableCell className="max-w-xs text-sm">{row.note}</TableCell>
+                  <TableCell className="max-w-xs text-sm whitespace-normal">
+                    {row.note ? <span className="block">{row.note}</span> : null}
+                    {row.like_note ? (
+                      <span className="block">{row.note ? `마음에 든 점: ${row.like_note}` : row.like_note}</span>
+                    ) : null}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

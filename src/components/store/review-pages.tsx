@@ -1,6 +1,6 @@
 "use client"
 
-import { useLayoutEffect, useRef, useState, type PointerEvent } from "react"
+import { useRef, useState, type PointerEvent } from "react"
 import { cn } from "@/lib/utils"
 
 export type ReviewCard = {
@@ -14,11 +14,7 @@ export type ReviewCard = {
   image?: string
 }
 
-function cardsPerView(width: number) {
-  if (width < 560) return 2
-  if (width < 880) return 3
-  return 5
-}
+const PAGE_SIZE = 5
 
 function chunk(reviews: ReviewCard[], size: number) {
   const pages: ReviewCard[][] = []
@@ -28,14 +24,10 @@ function chunk(reviews: ReviewCard[], size: number) {
   return pages
 }
 
-function oneLine(body: string) {
-  return body.replace(/\s+/g, " ").trim()
-}
-
 function Stars({ score }: { score: string }) {
   const value = Math.max(0, Math.min(5, Math.round(Number(score) || 0)))
   return (
-    <p className="mt-1 text-[11px] leading-none tracking-[0.14em]" aria-label={`별점 ${score}`}>
+    <p className="text-[13px] leading-none tracking-[0.14em]" aria-label={`별점 ${score}`}>
       {Array.from({ length: 5 }, (_, star) => (
         <span key={star} className={star < value ? "text-[#111111]" : "text-[#d4d4d4]"}>
           ★
@@ -48,7 +40,6 @@ function Stars({ score }: { score: string }) {
 export function ReviewPages({ reviews }: { reviews: ReviewCard[] }) {
   const frame = useRef<HTMLDivElement>(null)
   const drag = useRef({ id: -1, x: 0, y: 0, axis: null as null | "x" | "y" })
-  const [perPage, setPerPage] = useState(5)
   const [page, setPage] = useState(0)
   const [dragPx, setDragPx] = useState(0)
   const [dragging, setDragging] = useState(false)
@@ -62,20 +53,7 @@ export function ReviewPages({ reviews }: { reviews: ReviewCard[] }) {
     drag.current = { id: -1, x: 0, y: 0, axis: null }
   }
 
-  useLayoutEffect(() => {
-    const el = frame.current
-    if (!el) return
-    const apply = () => {
-      const next = cardsPerView(el.clientWidth)
-      setPerPage((current) => (current === next ? current : next))
-    }
-    apply()
-    const observer = new ResizeObserver(apply)
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  const pages = chunk(reviews, perPage)
+  const pages = chunk(reviews, PAGE_SIZE)
   const pageCount = pages.length
   const index = pageCount === 0 ? 0 : Math.min(page, pageCount - 1)
   const visible = pages[index]?.length ?? 0
@@ -141,7 +119,7 @@ export function ReviewPages({ reviews }: { reviews: ReviewCard[] }) {
       data-review-list
       data-review-page={index + 1}
       data-review-pages={pageCount}
-      data-review-per-page={perPage}
+      data-review-per-page={PAGE_SIZE}
       data-review-visible={visible}
     >
       <div className="mb-3 flex items-center justify-end gap-2.5 text-[13px] leading-none text-[#7a7a7a] tabular-nums" data-review-pager>
@@ -180,7 +158,7 @@ export function ReviewPages({ reviews }: { reviews: ReviewCard[] }) {
       >
         <div
           className={cn(
-            "flex w-full select-none",
+            "flex w-full",
             dragging ? "cursor-grabbing" : pageCount > 1 ? "cursor-grab" : undefined,
             !dragging && "transition-transform duration-300 ease-out motion-reduce:transition-none",
           )}
@@ -189,8 +167,7 @@ export function ReviewPages({ reviews }: { reviews: ReviewCard[] }) {
           {pages.map((group, pageIndex) => (
             <div
               key={group.map((review) => review.key).join("|") || pageIndex}
-              className="grid w-full shrink-0 gap-3"
-              style={{ gridTemplateColumns: `repeat(${perPage}, minmax(0, 1fr))` }}
+              className="flex w-full shrink-0 flex-col"
               data-review-page-panel={pageIndex + 1}
               data-current={pageIndex === index ? "true" : "false"}
               aria-hidden={pageIndex === index ? undefined : true}
@@ -201,23 +178,14 @@ export function ReviewPages({ reviews }: { reviews: ReviewCard[] }) {
                   data-review={review.id}
                   data-review-source={review.source}
                   data-review-card
-                  className="min-w-0"
+                  className="min-w-0 border-b border-[#ececec] py-4 first:pt-0 last:border-b-0 last:pb-0"
                 >
-                  {review.image ? (
-                    <img
-                      src={review.image}
-                      alt=""
-                      draggable={false}
-                      className="aspect-square w-full object-cover"
-                      data-review-photo="image"
-                    />
-                  ) : (
-                    <div className="aspect-square w-full border border-[#e5e5e5] bg-[#f6f6f6]" data-review-photo="empty" />
-                  )}
-                  <p className="mt-2 truncate text-[12px] leading-4 text-[#222222]">{oneLine(review.body)}</p>
-                  <Stars score={review.score} />
-                  <p className="mt-1.5 text-[11px] leading-4 text-[#8a8a8a]">{review.date}</p>
-                  <p className="text-[11px] leading-4 text-[#555555]">{review.name}</p>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <p className="text-sm font-medium text-[#111111]">{review.name}</p>
+                    <Stars score={review.score} />
+                    <p className="text-[12px] leading-4 text-[#8a8a8a]">{review.date}</p>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 break-words whitespace-pre-wrap text-[#222222]">{review.body}</p>
                 </article>
               ))}
             </div>
