@@ -1,7 +1,7 @@
 /** 상세 갤러리 공통 슬라이드. 팩 페이지는 대표 사진이 첫 화면이다. */
 export type DetailSlide =
   | { id: string; kind: "model" }
-  | { id: string; kind: "image"; src: string; alt: string; fit?: "contain" | "cover" }
+  | { id: string; kind: "image"; src: string; alt: string; fit?: "contain" | "cover"; position?: string }
 
 export const PRODUCT_DETAIL_SLIDES: DetailSlide[] = [
   { id: "tin", kind: "model" },
@@ -25,10 +25,11 @@ export const THREE_PACK_PHOTO = "/products/sample-a-3.png"
 export const SIX_PACK_SLUG = "sample-a-6"
 export const SIX_PACK_PHOTO = "/products/sample-a-6.png"
 
-const COVER_PHOTOS: Record<string, { src: string; alt: string }> = {
-  [ONE_PACK_SLUG]: { src: ONE_PACK_PHOTO, alt: "ritmore 카페인 민트 캔디 1개" },
-  [THREE_PACK_SLUG]: { src: THREE_PACK_PHOTO, alt: "ritmore 카페인 민트 캔디 3개" },
-  [SIX_PACK_SLUG]: { src: SIX_PACK_PHOTO, alt: "ritmore 카페인 민트 캔디 6개" },
+const COVER_PHOTOS: Record<string, { src: string; alt: string; fit: "contain" | "cover"; position?: string }> = {
+  // 제품이 사진 위쪽에 있다. 정사각 가운데 crop은 아래 여백만 넓혀 틴이 떠 보인다. 목록과 같은 위치.
+  [ONE_PACK_SLUG]: { src: ONE_PACK_PHOTO, alt: "ritmore 카페인 민트 캔디 1개", fit: "cover", position: "center 8%" },
+  [THREE_PACK_SLUG]: { src: THREE_PACK_PHOTO, alt: "ritmore 카페인 민트 캔디 3개", fit: "cover" },
+  [SIX_PACK_SLUG]: { src: SIX_PACK_PHOTO, alt: "ritmore 카페인 민트 캔디 6개", fit: "cover" },
 }
 
 export function coverPhotoFor(slug: string) {
@@ -45,7 +46,8 @@ export function detailSlidesFor(slug: string): DetailSlide[] {
     kind: "image",
     src: cover.src,
     alt: cover.alt,
-    fit: "cover",
+    fit: cover.fit,
+    position: cover.position,
   }
   // 첫 화면은 대표 사진. 3D와 나머지 사진은 그 다음이다.
   return model ? [coverSlide, model, ...photos] : [coverSlide, ...photos]

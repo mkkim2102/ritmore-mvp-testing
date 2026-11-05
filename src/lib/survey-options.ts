@@ -1,3 +1,17 @@
-export const EASE = ["쉬웠다", "보통이다", "어려웠다"] as const
-export const SECOND_PRESS = ["도움이 됐다", "잘 모르겠다", "도움이 되지 않았다"] as const
-export const INTENT = ["있다", "아직 모르겠다", "없다"] as const
+/** 구매하기 다음 화면의 1번. 하나만 고른다. */
+export const BUY_REASONS = [
+  "제품과 가격이 마음에 들어 실제로 구매하려고",
+  "구매 옵션이나 최종 결제 금액을 더 확인하려고",
+  "어떤 화면이 나오는지 궁금해서",
+  "기타",
+] as const
+
+/** 2번. 최대 두 개. */
+export const BUY_LIKES = [
+  "졸릴 때 잠을 깨고 집중하는 데 도움이 될 것 같아서",
+  "한 알씩 먹으며 카페인 섭취량을 조절할 수 있어서",
+  "음료를 마시기 어려운 상황에서도 간편하게 먹을 수 있어서",
+  "작고 가벼워 가지고 다니기 좋아서",
+] as const
+
+export const OTHER_REASON = BUY_REASONS[3]

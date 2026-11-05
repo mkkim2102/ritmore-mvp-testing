@@ -73,7 +73,14 @@ export function InquiryForm({ slug }: { slug: string }) {
           문의를 남겼습니다.
         </p>
       ) : null}
-      <button type="submit" className={cn(buttonVariants(), "h-12 w-full text-base")} disabled={pending}>
+      <button
+        type="submit"
+        className={cn(
+          buttonVariants(),
+          "h-12 w-full border-[#17364A] bg-[#17364A] text-base text-white hover:bg-[#17364A]/90",
+        )}
+        disabled={pending}
+      >
         {pending ? "남기는 중" : "문의 남기기"}
       </button>
     </form>

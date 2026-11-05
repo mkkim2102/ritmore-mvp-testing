@@ -2,33 +2,35 @@
 
 import { useState } from "react"
 import { buttonVariants } from "@/components/ui/button"
-import { won } from "@/lib/format"
-import { EASE, INTENT, SECOND_PRESS } from "@/lib/survey-options"
+import { BUY_LIKES, BUY_REASONS, OTHER_REASON } from "@/lib/survey-options"
 import { cn } from "@/lib/utils"
 
-export function ProjectSurvey({
-  items,
-  name,
-  qty,
-  price,
-}: {
-  items: string
-  name: string | null
-  qty: number | null
-  price: number | null
-}) {
-  const [ease, setEase] = useState<(typeof EASE)[number] | "">("")
-  const [secondPress, setSecondPress] = useState<(typeof SECOND_PRESS)[number] | "">("")
-  const [intent, setIntent] = useState<(typeof INTENT)[number] | "">("")
-  const [note, setNote] = useState("")
+const brandNavy = "border-[#17364A] bg-[#17364A] text-white hover:bg-[#17364A]/90"
+
+export function ProjectSurvey({ items }: { items: string }) {
+  const [reason, setReason] = useState<(typeof BUY_REASONS)[number] | "">("")
+  const [likes, setLikes] = useState<(typeof BUY_LIKES)[number][]>([])
+  const [other, setOther] = useState("")
   const [pending, setPending] = useState(false)
   const [error, setError] = useState("")
   const [done, setDone] = useState(false)
 
+  function toggleLike(option: (typeof BUY_LIKES)[number]) {
+    setError("")
+    setLikes((current) => {
+      if (current.includes(option)) return current.filter((item) => item !== option)
+      if (current.length >= 2) {
+        setError("최대 2개를 선택해 주세요.")
+        return current
+      }
+      return [...current, option]
+    })
+  }
+
   async function submit(event: React.FormEvent) {
     event.preventDefault()
-    if (!ease || !secondPress || !intent) {
-      setError("세 가지 질문을 골라 주세요.")
+    if (!reason) {
+      setError("이유를 하나 골라 주세요.")
       return
     }
     setPending(true)
@@ -36,7 +38,12 @@ export function ProjectSurvey({
     const response = await fetch("/api/survey", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ items, ease, secondPress, intent, note }),
+      body: JSON.stringify({
+        items,
+        reason,
+        likes,
+        other: reason === OTHER_REASON ? other : "",
+      }),
     })
     const json = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null
     setPending(false)
@@ -49,85 +56,89 @@ export function ProjectSurvey({
 
   if (done) {
     return (
-      <p className="rounded-2xl border border-border bg-white p-5 text-sm leading-6" data-survey-done>
+      <p className="text-sm leading-6" data-survey-done>
         답을 받았습니다. 이 답은 이름과 연락처 없이 시험 기록으로만 남습니다.
       </p>
     )
   }
 
   return (
-    <form onSubmit={submit} className="space-y-6 rounded-2xl border border-border bg-white p-5" data-project-survey>
-      {name && qty && price ? (
-        <p className="text-sm leading-6">
-          고른 것은 {name} {qty}개, 실판매가 {won(price * qty)}입니다. 이 금액은 결제되지 않습니다.
+    <form onSubmit={submit} className="space-y-6" data-project-survey>
+      <fieldset className="space-y-3">
+        <legend className="text-base leading-7 font-medium">1. 방금 &apos;구매하기&apos;를 누른 가장 큰 이유는 무엇인가요?</legend>
+        <p className="text-sm leading-6 text-muted-foreground">하나만 선택해 주세요.</p>
+        <div className="space-y-2.5" role="radiogroup" aria-label="구매하기를 누른 이유">
+          {BUY_REASONS.map((option) => (
+            <label key={option} className="flex items-start gap-2.5 text-sm leading-6">
+              <input
+                type="radio"
+                name="reason"
+                value={option}
+                checked={reason === option}
+                onChange={() => {
+                  setReason(option)
+                  setError("")
+                }}
+                className="mt-1 size-4 accent-[#17364A]"
+                data-buy-reason={option}
+              />
+              {option === OTHER_REASON ? (
+                <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+                  <span>기타</span>
+                  <input
+                    type="text"
+                    value={other}
+                    maxLength={500}
+                    aria-label="기타 이유"
+                    onFocus={() => setReason(OTHER_REASON)}
+                    onChange={(event) => {
+                      setReason(OTHER_REASON)
+                      setOther(event.target.value.slice(0, 500))
+                      setError("")
+                    }}
+                    className="h-8 min-w-28 flex-1 border-0 border-b border-[#111111] bg-transparent px-1 text-sm outline-none"
+                  />
+                </span>
+              ) : (
+                <span>{option}</span>
+              )}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="space-y-3">
+        <legend className="text-base leading-7 font-medium">2. 리트모어의 어떤 점이 가장 마음에 드셨나요?</legend>
+        <p className="text-sm leading-6 text-muted-foreground">최대 2개를 선택해 주세요.</p>
+        <div className="space-y-2.5">
+          {BUY_LIKES.map((option) => {
+            const checked = likes.includes(option)
+            return (
+              <label key={option} className="flex items-start gap-2.5 text-sm leading-6">
+                <input
+                  type="checkbox"
+                  name="likes"
+                  value={option}
+                  checked={checked}
+                  onChange={() => toggleLike(option)}
+                  className="mt-1 size-4 accent-[#17364A]"
+                  data-buy-like={option}
+                />
+                <span>{option}</span>
+              </label>
+            )
+          })}
+        </div>
+      </fieldset>
+
+      {error ? (
+        <p className="text-sm text-red-700" role="alert">
+          {error}
         </p>
-      ) : (
-        <p className="text-sm leading-6 text-muted-foreground">수량을 고르지 않고 이 페이지에 왔습니다.</p>
-      )}
-      <Choice legend="흐름이 이해하기 쉬웠나요?" name="ease" options={EASE} value={ease} onChange={setEase} />
-      <Choice
-        legend="구매하기를 한 번 더 누르는 방식이 실수 방지에 도움이 됐나요?"
-        name="second"
-        options={SECOND_PRESS}
-        value={secondPress}
-        onChange={setSecondPress}
-      />
-      <Choice legend="이런 민트를 살 의향이 있나요?" name="intent" options={INTENT} value={intent} onChange={setIntent} />
-      <label className="block space-y-2 text-sm">
-        <span className="font-medium">더 남기고 싶은 말</span>
-        <textarea
-          value={note}
-          onChange={(event) => setNote(event.target.value.slice(0, 500))}
-          rows={4}
-          className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm"
-          placeholder="없어도 됩니다."
-        />
-      </label>
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
-      <button type="submit" className={cn(buttonVariants(), "h-12 w-full")} disabled={pending}>
+      ) : null}
+      <button type="submit" className={cn(buttonVariants(), brandNavy, "h-12 w-full text-base")} disabled={pending}>
         {pending ? "보내는 중" : "답 보내기"}
       </button>
     </form>
-  )
-}
-
-function Choice<T extends string>({
-  legend,
-  name,
-  options,
-  value,
-  onChange,
-}: {
-  legend: string
-  name: string
-  options: readonly T[]
-  value: T | ""
-  onChange: (value: T) => void
-}) {
-  return (
-    <fieldset className="space-y-2">
-      <legend className="text-sm font-medium">{legend}</legend>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => (
-          <label
-            key={option}
-            className={cn(
-              "cursor-pointer rounded-full border px-3 py-2 text-sm",
-              value === option ? "border-[#111111] bg-[#111111] text-white" : "border-[#e5e5e5] bg-white",
-            )}
-          >
-            <input
-              className="sr-only"
-              type="radio"
-              name={name}
-              value={option}
-              checked={value === option}
-              onChange={() => onChange(option)}
-            />
-            {option}
-          </label>
-        ))}
-      </div>
-    </fieldset>
   )
 }

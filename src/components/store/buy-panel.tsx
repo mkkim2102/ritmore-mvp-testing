@@ -461,15 +461,17 @@ function ShippingNote({
 export function BuyPanel({
   flowCta = false,
   shippingAnchor = false,
+  priceSize = "total",
 }: {
   flowCta?: boolean
   shippingAnchor?: boolean
+  priceSize?: "total" | "rail"
 }) {
   const { price, compareAt, openSheet, selectedSlug } = useBuy()
 
   return (
     <div data-buy-panel data-buy-slug={selectedSlug} className="min-w-0 space-y-4">
-      <PriceTag price={price} compareAt={compareAt} size="total" />
+      <PriceTag price={price} compareAt={compareAt} size={priceSize} />
       <PackRow />
       <div className="min-w-0 space-y-2">
         <button

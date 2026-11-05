@@ -186,10 +186,7 @@ export function ProductDetail({
       <section id="reviews" className="scroll-mt-40 border-t border-border bg-card" data-review-count={reviewCount}>
         <div className="mx-auto max-w-6xl px-4 py-14 lg:max-w-none lg:px-0">
           <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">후기</p>
-              <h2 className="mt-2 font-serif text-3xl">먹어 본 이야기</h2>
-            </div>
+            <h2 className="font-serif text-3xl">후기</h2>
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               {reviewScore ? <StarRow score={reviewScore} /> : null}
               <span>{reviewSummary}</span>
@@ -279,22 +276,15 @@ export function ProductDetail({
           <div data-buy-rail className="min-w-0 lg:sticky lg:top-20 lg:z-10">
             <div className="min-w-0 space-y-6 bg-white lg:max-h-[calc(100svh-6.5rem)] lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:pb-4">
               <div className="min-w-0 space-y-3">
-                <div className="flex max-w-full flex-wrap gap-2">
-                  {landing.badges.map((badge) => (
-                    <span key={badge} className="rounded-full border border-border px-2.5 py-1 text-[11px] break-words text-[#111111]">
-                      {badge}
-                    </span>
-                  ))}
-                </div>
                 <p className="flex min-w-0 items-center gap-1.5 text-xs break-words text-[#111111]">
                   <TinMark />
                   {landing.eyebrow}
                 </p>
-                <p className="min-w-0 font-serif text-4xl leading-tight font-normal break-words text-[#111111]">
+                <p className="min-w-0 font-serif text-3xl leading-tight font-normal break-words text-[#111111]">
                   <SelectedProductTitle />
                 </p>
               </div>
-              <BuyPanel shippingAnchor />
+              <BuyPanel shippingAnchor priceSize="rail" />
               <p className="flex min-w-0 flex-wrap items-center gap-2 text-sm break-words text-muted-foreground">
                 {reviewScore ? <StarRow score={reviewScore} /> : null}
                 <span>{reviewSummary}</span>

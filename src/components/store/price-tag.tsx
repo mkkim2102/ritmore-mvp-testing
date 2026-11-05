@@ -7,6 +7,7 @@ const SELLING_CLASS = {
   card: "text-base font-semibold tabular-nums",
   lg: "text-4xl font-semibold tabular-nums",
   total: "text-2xl font-bold tabular-nums lg:text-3xl",
+  rail: "text-2xl font-bold tabular-nums",
   bar: "text-base font-semibold leading-none tabular-nums text-[#111111]",
   sheet: "text-xl font-bold tabular-nums",
   unit: "text-base font-semibold tabular-nums",
@@ -33,10 +34,19 @@ export function PriceTag({
   const selling = price * count
   const rate = discountRate(compareAt, price)
   const list = compareAt != null ? compareAt * count : null
+  const showPriceLabels = size !== "rail"
+  const listClass =
+    size === "card" || size === "bar"
+      ? "text-[11px] text-muted-foreground"
+      : size === "rail"
+        ? "text-xs text-muted-foreground"
+        : "text-sm text-muted-foreground"
   const rateClass =
-    size === "lg" || size === "total"
-      ? "text-lg font-semibold tabular-nums text-[#e10600]"
-      : "text-sm font-semibold tabular-nums text-[#e10600]"
+    size === "rail"
+      ? "text-base font-semibold tabular-nums text-[#e10600]"
+      : size === "lg" || size === "total"
+        ? "text-lg font-semibold tabular-nums text-[#e10600]"
+        : "text-sm font-semibold tabular-nums text-[#e10600]"
 
   return (
     <p
@@ -47,16 +57,15 @@ export function PriceTag({
       )}
     >
       {list != null ? (
-        <span
-          className={size === "card" || size === "bar" ? "text-[11px] text-muted-foreground" : "text-sm text-muted-foreground"}
-          data-list-price={list}
-        >
-          <span className="mr-1">정가</span>
+        <span className={listClass} data-list-price={list}>
+          {showPriceLabels ? <span className="mr-1">정가</span> : null}
           <span className={rate != null ? "line-through tabular-nums" : "tabular-nums"}>{won(list)}</span>
         </span>
       ) : null}
       <span>
-        <span className="mr-1 text-xs text-muted-foreground">{sellingLabel}</span>
+        {showPriceLabels ? (
+          <span className="mr-1 text-xs text-muted-foreground">{sellingLabel}</span>
+        ) : null}
         <span
           className={SELLING_CLASS[size]}
           data-selling-price={selling}

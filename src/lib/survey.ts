@@ -1,8 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { all, run } from "@/lib/db"
-import { EASE, INTENT, SECOND_PRESS } from "@/lib/survey-options"
-
-export { EASE, INTENT, SECOND_PRESS }
+import { BUY_REASONS } from "@/lib/survey-options"
 
 export type SurveyInput = {
   visitorId: string
@@ -12,9 +10,9 @@ export type SurveyInput = {
   productSlug: string | null
   qty: number | null
   price: number | null
-  ease: (typeof EASE)[number]
-  secondPress: (typeof SECOND_PRESS)[number]
-  intent: (typeof INTENT)[number]
+  ease: (typeof BUY_REASONS)[number]
+  secondPress: string
+  intent: string
   note: string
 }
 

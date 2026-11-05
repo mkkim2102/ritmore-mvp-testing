@@ -168,8 +168,10 @@ export function ProductGallery({
                   draggable={false}
                   className={cn(
                     "h-full w-full bg-white",
-                    slide.fit === "cover" ? "object-cover object-center" : "object-contain",
+                    slide.fit === "cover" ? "object-cover" : "object-contain",
+                    slide.fit === "cover" && !slide.position && "object-center",
                   )}
+                  style={slide.position ? { objectPosition: slide.position } : undefined}
                 />
               )}
             </div>

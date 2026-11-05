@@ -2,12 +2,20 @@ import type { Metadata } from "next"
 import { ProjectSurvey } from "@/components/store/project-survey"
 import { Tracker } from "@/components/store/tracker"
 import { parseItems, priceLines } from "@/lib/catalog"
+import { won } from "@/lib/format"
 import { getRequestContext } from "@/lib/request"
 import { publicMetadata } from "@/lib/seo"
 
+const INTRO = [
+  "리트모어는 “집중은 필요한데, 커피 한 잔, 에너지 음료 한 캔은 부담스러울 때”를 위해 5명의 고려대학교 학생들이 기획한 카페인 민트입니다. 소비자들이 현재 카페인을 얼마나 섭취하는지 명확히 인지하고, 상황에 맞게 섭취량을 조절할 수 있는 선택지를 만들고 싶었습니다.",
+  "현재 보신 페이지는 제품 출시 전, 고객 반응을 확인하기 위한 테스트 페이지입니다. 아직 판매가 시작되지 않아 주문이나 결제는 이루어지지 않았습니다. 구매 버튼을 누른 뒤에야 안내드리게 된 점 양해 부탁드립니다.",
+  "저희는 이런 제품이 실제로 필요한지, 제안한 구성과 가격이 구매를 고려할 만큼 매력적인지 알고 싶었습니다. 여러분의 반응은 리트모어의 출시 여부와 제품 방향을 결정하는 데 참고할 예정입니다. 제품은 생산이 완료되는 대로 곧 출시될 예정입니다.",
+  "시간을 내어 리트모어를 살펴봐 주셔서 감사드리며, 저희가 여러분을 위해 더 나은 제품을 만들 수 있도록, 여유가 되신다면 아래 설문 작성을 부탁드립니다.",
+] as const
+
 export const metadata: Metadata = publicMetadata({
-  title: "이 시험 | 리트모어",
-  description: "리트모어 연습 상점이 무엇을 시험하는지 알리고, 짧은 질문을 받습니다.",
+  title: "리트모어에 관심을 가져주셔서 감사합니다 | 리트모어",
+  description: "현재 구매는 이루어지지 않습니다. 제품 출시 전 고객 반응을 확인하는 페이지입니다.",
   path: "/project",
   index: false,
 })
@@ -20,32 +28,59 @@ export default async function ProjectPage({
   const query = await searchParams
   const raw = Array.isArray(query.items) ? query.items[0] : query.items
   const context = await getRequestContext()
-  const line = priceLines(parseItems(raw), context.touch)[0]
+  const lines = priceLines(parseItems(raw), context.touch)
+  const total = lines.reduce((sum, line) => sum + line.offer.price * line.qty, 0)
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-8 px-4 py-10">
+    <div className="mx-auto w-full max-w-2xl space-y-8 px-4 py-10 sm:px-6 sm:py-14">
       <Tracker />
-      <div className="space-y-4">
-        <p className="text-xs font-medium text-muted-foreground">이 시험</p>
-        <h1 className="text-3xl leading-tight text-[#111111]">구매는 되지 않습니다.</h1>
-        <div className="space-y-3 text-sm leading-7 text-[#111111]">
-          <p>
-            ritmore는 페퍼민트 맛 카페인 민트 캔디를 12개입 슬라이드 틴으로 시험하는 연습 상점입니다. 커피 한 잔은
-            많고, 조금은 더 필요할 때를 말투로 두고 있습니다. 한 알의 카페인 함량은 아직 정하지 않았습니다.
-          </p>
-          <p>
-            이 사이트는 손님이 첫 화면에서 제품을 보고, 구매하기를 눌러 수량을 고른 뒤, 한 번 더 눌러야 여기까지
-            오는지 보는 시험입니다. 두 번째 누름은 첫 누름으로 구매가 끝나지 않게 하려는 장치입니다.
-          </p>
-          <p>카드는 청구되지 않고, 주문과 배송은 만들어지지 않습니다. 이름과 연락처는 받지 않습니다.</p>
-        </div>
+      <div className="space-y-4 text-base leading-7 text-[#111111]">
+        <h1 className="text-base leading-7 font-normal">
+          리트모어에 관심을 가져주셔서 감사합니다. 현재 구매는 이루어지지 않습니다.
+        </h1>
+        {INTRO.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
       </div>
-      <ProjectSurvey
-        items={raw || ""}
-        name={line?.product.name ?? null}
-        qty={line?.qty ?? null}
-        price={line?.offer.price ?? null}
-      />
+
+      {lines.length === 0 ? (
+        <p className="text-sm leading-6 text-muted-foreground" data-order-summary>
+          수량을 고르지 않고 이 페이지에 왔습니다.
+        </p>
+      ) : (
+        <div className="space-y-3 border-t border-[#e5e5e5] pt-4 text-sm leading-6" data-order-summary>
+          <ul className="space-y-2">
+            {lines.map((line) => (
+              <li
+                key={line.product.slug}
+                data-order-line={line.product.slug}
+                className="flex items-start justify-between gap-3"
+              >
+                <span>
+                  {line.product.name}
+                  <span className="text-muted-foreground"> × {line.qty}</span>
+                </span>
+                <span className="shrink-0 tabular-nums">{won(line.offer.price * line.qty)}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-end justify-between gap-3 border-t border-[#e5e5e5] pt-3">
+            <p>합계</p>
+            <p className="text-lg font-semibold tabular-nums" data-order-total={total}>
+              {won(total)}
+            </p>
+          </div>
+          <p className="text-muted-foreground">이 금액은 결제되지 않습니다.</p>
+        </div>
+      )}
+
+      <section className="space-y-6">
+        <div className="space-y-2">
+          <h2 className="text-base leading-7 font-medium">어떤 점이 마음에 드셨나요?</h2>
+          <p className="text-sm leading-6 text-muted-foreground">짧은 답변으로 리트모어의 다음 모습을 함께 만들어 주세요.</p>
+        </div>
+        <ProjectSurvey items={raw || ""} />
+      </section>
     </div>
   )
 }
