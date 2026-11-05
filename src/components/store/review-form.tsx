@@ -33,10 +33,7 @@ export function ReviewForm({ slug }: { slug: string }) {
       data-review-form
     >
       <input type="hidden" name="slug" value={slug} />
-      <div>
-        <h3 className="font-medium">후기 남기기</h3>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">남기면 상품 페이지에 바로 보입니다.</p>
-      </div>
+      <h3 className="font-medium">후기 남기기</h3>
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">
           별점 <span className="font-normal text-muted-foreground">필수, 1에서 5</span>
@@ -93,7 +90,14 @@ export function ReviewForm({ slug }: { slug: string }) {
           후기를 남겼습니다.
         </p>
       ) : null}
-      <button type="submit" className={cn(buttonVariants(), "h-12 w-full text-base")} disabled={pending}>
+      <button
+        type="submit"
+        className={cn(
+          buttonVariants(),
+          "h-12 w-full border-[#17364A] bg-[#17364A] text-base text-white hover:bg-[#17364A]/90",
+        )}
+        disabled={pending}
+      >
         {pending ? "남기는 중" : "후기 남기기"}
       </button>
     </form>

@@ -33,10 +33,6 @@ export function InquiryForm({ slug }: { slug: string }) {
       data-inquiry-form
     >
       <input type="hidden" name="slug" value={slug} />
-      <div>
-        <h3 className="font-medium">문의 남기기</h3>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">비공개로 남고, 가게에서만 봅니다.</p>
-      </div>
       <label className="block space-y-2 text-sm" htmlFor="inquiry-body">
         <span className="font-medium">
           문의 글 <span className="font-normal text-muted-foreground">필수, 500자</span>

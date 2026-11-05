@@ -1,4 +1,4 @@
-/** 상세 갤러리 공통 슬라이드. 3D 틴이 첫 화면이고, 사진은 뒤에 둔다. */
+/** 상세 갤러리 공통 슬라이드. 팩 페이지는 대표 사진이 첫 화면이다. */
 export type DetailSlide =
   | { id: string; kind: "model" }
   | { id: string; kind: "image"; src: string; alt: string; fit?: "contain" | "cover" }
@@ -47,6 +47,6 @@ export function detailSlidesFor(slug: string): DetailSlide[] {
     alt: cover.alt,
     fit: "cover",
   }
-  // 첫 화면은 기울인 3D 틴. 팩 사진과 나머지 컷은 그 다음 슬라이드다.
-  return model ? [model, coverSlide, ...photos] : [coverSlide, ...photos]
+  // 첫 화면은 대표 사진. 3D와 나머지 사진은 그 다음이다.
+  return model ? [coverSlide, model, ...photos] : [coverSlide, ...photos]
 }

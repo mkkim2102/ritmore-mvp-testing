@@ -1,13 +1,11 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { SCENE_SLIDE_TEST, SceneDeck } from "@/components/store/scene-deck"
-import { TinModel } from "@/components/store/tin-model"
 import { Tracker } from "@/components/store/tracker"
 import { buttonVariants } from "@/components/ui/button"
 import { getProductBySlug, resolveOffer } from "@/lib/catalog"
 import { getRequestContext } from "@/lib/request"
 import { allowIndex, HOME_DESCRIPTION, HOME_TITLE, isPreviewQuery, publicMetadata } from "@/lib/seo"
-import { MAIN_COPY } from "@/lib/shop-guide"
 import { cn } from "@/lib/utils"
 
 export async function generateMetadata({
@@ -56,38 +54,35 @@ export default async function HomePage() {
                   aria-label={`${product.name} 상품`}
                   className="pointer-events-auto absolute inset-0 block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#111111]"
                 >
-                  <TinModel
-                    orbit="18deg 58deg 0.198m"
-                    fieldOfView="22deg"
-                    target="-0.003m 0m 0m"
-                    label={`${product.name}. 페퍼민트 12개입 슬라이드 틴`}
+                  <img
+                    src="/brand/home-tin.png"
+                    alt={`${product.name}. 페퍼민트 12개입 슬라이드 틴`}
+                    className="h-full w-full object-contain"
                   />
                 </Link>
               </div>
-              <div className="mx-auto mt-2 w-full max-w-6xl shrink-0 px-4 lg:hidden">
+              <div className="mx-auto mt-2 grid w-full max-w-6xl shrink-0 grid-cols-2 gap-2 px-4 lg:px-8">
                 <Link
                   href="/products"
+                  data-home-buy
                   className={cn(
                     buttonVariants({ size: "lg" }),
-                    "pointer-events-auto h-12 w-full border-[#17364A] bg-[#17364A] px-6 text-base text-white hover:bg-[#17364A]/90",
+                    "pointer-events-auto h-12 border-[#17364A] bg-[#17364A] px-3 text-base text-white hover:bg-[#17364A]/90",
                   )}
                 >
                   구매하러가기
                 </Link>
+                <Link
+                  href="/brand"
+                  data-home-brand
+                  className={cn(
+                    buttonVariants({ size: "lg", variant: "outline" }),
+                    "pointer-events-auto h-12 border-[#17364A] bg-white px-3 text-base text-[#17364A] hover:bg-[#17364A]/5",
+                  )}
+                >
+                  브랜드 보러가기
+                </Link>
               </div>
-            </div>
-          </section>
-          <section data-home-copy className="flex h-full items-center px-4 pt-16 pb-8">
-            <div className="mx-auto w-full max-w-3xl">
-              <p className="text-xs font-medium text-[#111111]">{product.category}</p>
-              <h2 className="mt-3 text-2xl leading-snug text-[#111111] lg:text-4xl">{product.summary}</h2>
-              <p className="mt-6 text-base leading-8 text-[#111111] lg:text-lg">{product.description}</p>
-            </div>
-          </section>
-          <section data-home-line className="flex h-full items-center px-4 pt-16 pb-8">
-            <div className="mx-auto w-full max-w-3xl">
-              <p className="text-2xl leading-snug text-[#111111] lg:text-4xl">{MAIN_COPY}</p>
-              <p className="mt-6 leading-8 text-[#111111]">틴을 밀어 열고, 필요할 때 한 알씩 꺼냅니다.</p>
             </div>
           </section>
         </SceneDeck>

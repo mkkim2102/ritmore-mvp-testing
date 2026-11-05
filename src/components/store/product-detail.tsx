@@ -245,13 +245,8 @@ export function ProductDetail({
       </section>
 
       <section id="faq" className="scroll-mt-40 border-t border-border px-4 py-14 lg:min-w-0 lg:border-t-0 lg:px-0">
-        <p className="text-xs font-medium text-muted-foreground">문의</p>
-        <h2 className="mt-2 font-serif text-3xl">문의</h2>
-        {inquiries.length === 0 ? (
-          <p className="mt-8 text-sm leading-6 text-muted-foreground" data-inquiry-empty>
-            문의를 남길 수 있습니다.
-          </p>
-        ) : (
+        <h2 className="font-serif text-3xl">문의</h2>
+        {inquiries.length > 0 ? (
           <div className="mt-8 space-y-4" data-inquiry-list>
             {inquiries.map((inquiry) => (
               <article
@@ -274,7 +269,7 @@ export function ProductDetail({
               </article>
             ))}
           </div>
-        )}
+        ) : null}
         <InquiryForm slug={product.slug} />
       </section>
       </div>
