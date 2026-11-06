@@ -82,6 +82,13 @@ export function cleanLinkCode(value: string | null | undefined) {
   return code
 }
 
+/** `/r/spring` carries the entry code in the path. The public URL does not need a channel name. */
+export function linkCodeFromPath(pathname: string) {
+  const match = /^\/r\/([a-z0-9][a-z0-9_-]{0,39})$/i.exec(pathname)
+  if (!match) return null
+  return cleanLinkCode(match[1])
+}
+
 export function safePath(value: unknown) {
   if (typeof value !== "string") return "/"
   if (!value.startsWith("/") || value.startsWith("//") || value.includes("://")) return "/"

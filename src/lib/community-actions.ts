@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { labTokenValid } from "@/lib/auth"
-import { CUSTOMER_TIN_COUNTS, isTinFamily, tinSlugForCount } from "@/lib/bundles"
+import { CUSTOMER_TIN_COUNTS, isTinFamily, productPath, tinSlugForCount } from "@/lib/bundles"
 import { getProductBySlug } from "@/lib/catalog"
 import {
   ANSWER_MAX,
@@ -53,6 +53,7 @@ function writeKey(slug: string) {
 
 function revalidateCommunity() {
   for (const count of CUSTOMER_TIN_COUNTS) {
+    revalidatePath(productPath(tinSlugForCount(count)))
     revalidatePath(`/products/${tinSlugForCount(count)}`)
   }
 }

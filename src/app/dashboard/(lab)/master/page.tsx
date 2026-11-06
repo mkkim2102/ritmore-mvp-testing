@@ -1,6 +1,6 @@
-import { headers } from "next/headers"
 import Link from "next/link"
 import { CopyLink } from "@/components/dashboard/copy-link"
+import { EntryUrlField } from "@/components/dashboard/entry-url-field"
 import { PriceFields } from "@/components/dashboard/price-fields"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { createEntryAction, deleteEntryAction, updateShelfPriceAction } from "@/lib/actions"
-import { TIN_FAMILY, customerTinLabel, isCustomerTinSlug } from "@/lib/bundles"
+import { TIN_FAMILY, customerTinLabel, isCustomerTinSlug, productPath } from "@/lib/bundles"
 import { getProductBySlug, listLinks, listVariants } from "@/lib/catalog"
-import { discountRate, purchaseEntryUrl, requestOrigin, won } from "@/lib/format"
+import { defaultEntryPath, entryPublicUrl, entryTargets, PUBLIC_ENTRY_ORIGIN } from "@/lib/entry"
+import { discountRate, won } from "@/lib/format"
 import type { TrackingLink, Variant } from "@/lib/types"
 
 export const metadata = { title: "마스터" }
@@ -28,8 +29,8 @@ export default async function MasterPage({
     .filter((link) => !link.archived)
     .sort((a, b) => rank(a.code) - rank(b.code) || a.code.localeCompare(b.code))
   const variants = listVariants()
-  const origin = requestOrigin(await headers())
   const created = links.find((link) => link.code === query.created)
+  const createdUrl = created ? entryPublicUrl(created.landingPath, created.code) : ""
   const shelf = product?.basePrice ?? 0
   const configs = TIN_FAMILY.map((item) => ({ ...item, product: getProductBySlug(item.slug) }))
   const savedConfig = configs.find((item) => item.slug === query.saved)
@@ -58,10 +59,10 @@ export default async function MasterPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm break-all" data-created-url={purchaseEntryUrl(origin, created.code)}>
-              {purchaseEntryUrl(origin, created.code)}
+            <p className="text-sm break-all" data-created-url={createdUrl}>
+              {createdUrl}
             </p>
-            <CopyLink url={purchaseEntryUrl(origin, created.code)} />
+            <CopyLink url={createdUrl} />
           </CardContent>
         </Card>
       ) : null}
@@ -105,7 +106,7 @@ export default async function MasterPage({
                     <p className="font-medium">
                       {isCustomerTinSlug(item.slug) ? customerTinLabel(item.count) : (item.product?.name ?? item.slug)}
                     </p>
-                    <Link href={`/products/${item.slug}`} className="text-sm underline underline-offset-4">
+                    <Link href={productPath(item.slug)} className="text-sm underline underline-offset-4">
                       판매 페이지
                     </Link>
                   </div>
@@ -175,12 +176,12 @@ export default async function MasterPage({
           <CardTitle>진입점 만들기</CardTitle>
           <CardDescription>
             짧은 이름, 메모, 가격 고정을 저장하면 코드가 생깁니다. 영문으로 적으면 그 글자가 코드가 됩니다. blog
-            라고 적으면 코드는 blog 입니다. 가격을 비우면 진열 가격입니다. 주소는 모두 같은 구매 페이지로
-            갑니다.
+            라고 적으면 코드는 blog 입니다. 가격을 비우면 진열 가격입니다. 공개 주소는 {PUBLIC_ENTRY_ORIGIN}{" "}
+            과 고른 경로이고, 방문 기록은 인스타그램으로 남습니다.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={createEntryAction} className="grid gap-4 md:grid-cols-2">
+          <form action={createEntryAction} className="grid gap-4 md:grid-cols-2" data-entry-form>
             <div className="space-y-2">
               <Label htmlFor="entry-name">짧은 이름</Label>
               <Input id="entry-name" name="name" className="h-9" placeholder="blog" required />
@@ -189,6 +190,7 @@ export default async function MasterPage({
               <Label htmlFor="entry-price">가격 고정 (원)</Label>
               <Input id="entry-price" name="priceOverride" className="h-9" inputMode="numeric" placeholder="비우면 진열 가격" />
             </div>
+            <EntryUrlField origin={PUBLIC_ENTRY_ORIGIN} targets={entryTargets()} defaultPath={defaultEntryPath()} />
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="entry-note">메모</Label>
               <Textarea id="entry-note" name="note" placeholder="어디에 둘지, 비워도 됩니다" />
@@ -210,7 +212,7 @@ export default async function MasterPage({
         </div>
         <div className="space-y-3">
           {links.map((link) => {
-            const url = purchaseEntryUrl(origin, link.code)
+            const url = entryPublicUrl(link.landingPath, link.code)
             const price = priceOf(link, variants, shelf)
             return (
               <Card
@@ -227,7 +229,9 @@ export default async function MasterPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm break-all">{url}</p>
+                  <p className="text-sm break-all" data-entry-url={url}>
+                    {url}
+                  </p>
                   {link.note ? <p className="text-sm text-muted-foreground">{link.note}</p> : null}
                   <div className="flex flex-wrap gap-2">
                     <CopyLink url={url} />

@@ -1,3 +1,5 @@
+import { internalProductSlug } from "@/lib/bundles"
+
 /** 상품 목록 카드 사진. src가 비어 있으면 칸만 보이고, 경로를 넣으면 그 이미지를 보여 준다. */
 export type ListPhoto = {
   slug: string
@@ -12,5 +14,6 @@ export const PRODUCT_LIST_PHOTOS: ListPhoto[] = [
 ]
 
 export function listPhotoFor(slug: string): ListPhoto {
-  return PRODUCT_LIST_PHOTOS.find((item) => item.slug === slug) ?? { slug, src: "", alt: "" }
+  const key = internalProductSlug(slug)
+  return PRODUCT_LIST_PHOTOS.find((item) => item.slug === key) ?? { slug: key, src: "", alt: "" }
 }

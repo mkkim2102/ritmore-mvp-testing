@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { labTokenValid } from "@/lib/auth"
-import { COOKIE, encodeTouch, HEADER, resolveVisit } from "@/lib/touch"
+import { legacyStorefrontPath } from "@/lib/bundles"
+import { COOKIE, encodeTouch, HEADER, linkCodeFromPath, resolveVisit } from "@/lib/touch"
 
 const COOKIE_BASE = {
   path: "/",
@@ -11,6 +12,12 @@ const COOKIE_BASE = {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const destination = legacyStorefrontPath(pathname)
+  if (destination) {
+    const url = request.nextUrl.clone()
+    url.pathname = destination
+    return NextResponse.redirect(url, 308)
+  }
 
   if (pathname.startsWith("/dashboard")) {
     if (pathname !== "/dashboard/login" && !labTokenValid(request.cookies.get(COOKIE.lab)?.value)) {
@@ -33,7 +40,7 @@ export function proxy(request: NextRequest) {
     pathname,
     host: [request.headers.get("x-forwarded-host") || "", request.headers.get("host") || "", request.nextUrl.host],
     query: {
-      link: request.nextUrl.searchParams.get("link"),
+      link: request.nextUrl.searchParams.get("link") || linkCodeFromPath(pathname),
       utm_source: request.nextUrl.searchParams.get("utm_source"),
       utm_medium: request.nextUrl.searchParams.get("utm_medium"),
       utm_campaign: request.nextUrl.searchParams.get("utm_campaign"),

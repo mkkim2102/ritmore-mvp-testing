@@ -1,8 +1,10 @@
 import {
   CUSTOMER_TIN_COUNTS,
   customerTinLabel,
+  internalProductSlug,
   isCustomerTinSlug,
   isTinFamily,
+  publicLandingPath,
   relatedTinSlugs,
   tinSlugForCount,
   type TinChoice,
@@ -100,7 +102,7 @@ function mapLink(row: LinkRow): TrackingLink {
     utmMedium: row.utm_medium,
     utmCampaign: row.utm_campaign,
     utmContent: row.utm_content,
-    landingPath: row.landing_path,
+    landingPath: publicLandingPath(row.landing_path),
     experimentId: row.experiment_id,
     variantId: row.variant_id,
     productId: row.product_id,
@@ -140,7 +142,7 @@ export function listProducts(includeHidden = false) {
 }
 
 export function getProductBySlug(slug: string) {
-  const row = get<ProductRow>("SELECT * FROM products WHERE slug = ?", [slug])
+  const row = get<ProductRow>("SELECT * FROM products WHERE slug = ?", [internalProductSlug(slug)])
   return row ? mapProduct(row) : null
 }
 
@@ -267,7 +269,7 @@ export function priceLines(items: { slug: string; qty: number }[], touch: Touch)
 }
 
 export function linkHref(origin: string, link: TrackingLink, preview = false) {
-  const url = new URL(link.landingPath || "/", origin)
+  const url = new URL(publicLandingPath(link.landingPath || "/"), origin)
   url.searchParams.set("link", link.code)
   if (link.utmSource) url.searchParams.set("utm_source", link.utmSource)
   if (link.utmMedium) url.searchParams.set("utm_medium", link.utmMedium)

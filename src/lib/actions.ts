@@ -16,7 +16,7 @@ import {
   setSetting,
 } from "@/lib/catalog"
 import { run } from "@/lib/db"
-import { entryCodeFromName } from "@/lib/entry"
+import { entryCodeFor, normalizeEntrySuffix, PUBLIC_ENTRY_ORIGIN } from "@/lib/entry"
 import { COOKIE, safePath } from "@/lib/touch"
 
 async function requireLab() {
@@ -359,17 +359,33 @@ export async function createEntryAction(formData: FormData) {
     }
   }
 
-  const product = getProductBySlug("sample-a")
+  const suffix = normalizeEntrySuffix(String(formData.get("suffix") ?? ""))
+  if (!suffix) fail("/dashboard/master", "주소는 / 로 시작하는 경로로 적어 주세요.")
+
+  const product = productForEntryPath(suffix)
   if (!product) fail("/dashboard/master", "상품을 찾지 못했습니다.")
-  const code = entryCodeFromName(parsed.data.name)
+  const code = entryCodeFor(parsed.data.name, suffix)
   if (getLinkByCode(code)) fail("/dashboard/master", "이미 있는 코드입니다. 다른 이름을 적어 주세요.")
 
+  const channel = channelById("instagram")
   try {
     run(
       `INSERT INTO links
         (id, code, name, channel, utm_source, utm_medium, utm_campaign, utm_content, landing_path, experiment_id, variant_id, product_id, note, price_override, archived, created_at)
-       VALUES (?, ?, ?, 'other', '', '', '', '', '/products/sample-a', NULL, NULL, ?, ?, ?, 0, ?)`,
-      [randomUUID(), code, parsed.data.name, product.id, parsed.data.note, priceOverride, new Date().toISOString()],
+       VALUES (?, ?, ?, ?, ?, ?, '', '', ?, NULL, NULL, ?, ?, ?, 0, ?)`,
+      [
+        randomUUID(),
+        code,
+        parsed.data.name,
+        channel.id,
+        channel.source,
+        channel.medium,
+        suffix,
+        product.id,
+        parsed.data.note,
+        priceOverride,
+        new Date().toISOString(),
+      ],
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : ""
@@ -378,6 +394,16 @@ export async function createEntryAction(formData: FormData) {
   }
   revalidatePath("/dashboard/master")
   redirect(`/dashboard/master?created=${encodeURIComponent(code)}`)
+}
+
+function productForEntryPath(suffix: string) {
+  const pathname = new URL(suffix, PUBLIC_ENTRY_ORIGIN).pathname
+  const match = /^\/products\/([^/]+)$/.exec(pathname)
+  if (match) {
+    const product = getProductBySlug(decodeURIComponent(match[1]))
+    if (product) return product
+  }
+  return getProductBySlug("sample-a")
 }
 
 export async function deleteEntryAction(formData: FormData) {

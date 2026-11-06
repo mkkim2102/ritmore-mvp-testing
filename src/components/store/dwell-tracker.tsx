@@ -8,7 +8,7 @@ type DwellPage = "home" | "product" | "cart" | "checkout"
 function dwellPage(pathname: string): DwellPage | null {
   if (pathname === "/") return "home"
   if (pathname === "/cart") return "cart"
-  if (pathname === "/checkout") return "checkout"
+  if (pathname === "/purchase" || pathname === "/checkout") return "checkout"
   if (/^\/products\/[^/]+$/.test(pathname)) return "product"
   return null
 }

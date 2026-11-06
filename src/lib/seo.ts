@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { productPath } from "@/lib/bundles"
 
 /**
  * 검색에 나가기 전에 사이트가 알아야 하는 값.
@@ -187,7 +188,7 @@ export function productStructuredData(input: {
   const origin = siteOrigin()
   const name = input.name.trim() || SITE_NAME_KO
   const description = productMetaDescription(name, input.summary)
-  const pageUrl = absoluteUrl(`/products/${input.slug}`)
+  const pageUrl = absoluteUrl(productPath(input.slug))
   const brandId = `${origin}/#brand`
   const product: Record<string, unknown> = {
     "@type": "Product",

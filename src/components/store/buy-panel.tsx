@@ -15,7 +15,7 @@ import {
 import { won } from "@/lib/format"
 import { JourneyStep, type JourneyName } from "@/components/store/journey-step"
 import { PriceTag } from "@/components/store/price-tag"
-import { packChoiceLabel, type TinChoice } from "@/lib/bundles"
+import { packChoiceLabel, productPath, type TinChoice } from "@/lib/bundles"
 import { MAX_QTY, clampQty } from "@/lib/qty"
 import { cn } from "@/lib/utils"
 
@@ -260,7 +260,7 @@ export function ProductBuyProvider({
       const next = list[index]
       if (!next) return
       const url = new URL(window.location.href)
-      url.pathname = `/products/${next.slug}`
+      url.pathname = productPath(next.slug)
       url.searchParams.delete("plan")
       const query = url.searchParams.toString()
       const href = query ? `${url.pathname}?${query}` : url.pathname

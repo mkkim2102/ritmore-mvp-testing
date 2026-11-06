@@ -14,3 +14,8 @@ npm run dev
 브라우저에서 [테스트 스토어](http://127.0.0.1:43117)를 엽니다.
 
 [운영 화면](http://127.0.0.1:43117/dashboard)을 사용하려면 `.env.example`을 `.env.local`로 복사한 뒤 `DASHBOARD_PASSWORD`와 `AUTH_SECRET`을 설정합니다. 세션 서명 키는 `openssl rand -hex 32`로 생성할 수 있습니다.
+
+## 시험 주소
+
+- 인스타그램 스토리 기본가 **3,990원** `/?link=ig-story&utm_source=instagram&utm_medium=story&utm_campaign=price-1`
+- 유튜브 설명란 상품 상세 기본가 **3,990원** `/products/buy1?link=yt-desc&utm_source=youtube&utm_medium=description&utm_campaign=price-1`

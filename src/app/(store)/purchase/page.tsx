@@ -35,7 +35,7 @@ export default async function CheckoutPage({
       {lines.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border px-6 py-16 text-center">
           <p className="font-serif text-2xl">담긴 제품이 없습니다</p>
-          <Link href="/products/sample-a" className={cn(buttonVariants(), "mt-6 h-11 px-4")}>
+          <Link href="/products/buy1" className={cn(buttonVariants(), "mt-6 h-11 px-4")}>
             제품 보기
           </Link>
         </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import { ProductDetail } from "@/components/store/product-detail"
 import { productShots } from "@/components/store/product-face"
-import { isCustomerTinSlug, isTinFamily, TIN_ENTRY_SLUG } from "@/lib/bundles"
+import { isCustomerTinSlug, isLegacyProductSlug, isTinFamily, productPath, TIN_ENTRY_SLUG } from "@/lib/bundles"
 import { coverPhotoFor } from "@/lib/product-slides"
 import { getProductBySlug, resolveOffer, tinPurchaseOptions } from "@/lib/catalog"
 import { getRequestContext } from "@/lib/request"
@@ -34,14 +34,14 @@ export async function generateMetadata({
     return publicMetadata({
       title: "상품 | 리트모어",
       description: PRODUCTS_DESCRIPTION,
-      path: `/products/${slug}`,
+      path: productPath(slug),
       index: false,
     })
   }
   return publicMetadata({
     title: productTitle(product.name),
     description: productMetaDescription(product.name, product.summary),
-    path: `/products/${product.slug}`,
+    path: productPath(product.slug),
     imagePath: coverPhotoFor(product.slug) ?? productShots(product.imageTone).main,
     imageAlt: productImageAlt(product.name),
     index,
@@ -67,10 +67,11 @@ export default async function ProductPage({
 }) {
   const { slug } = await params
   const query = await searchParams
+  if (isLegacyProductSlug(slug)) redirect(withQuery(productPath(slug), query))
   const product = getProductBySlug(slug)
   if (!product || product.status !== "active") notFound()
   if (isTinFamily(slug) && !isCustomerTinSlug(slug)) {
-    redirect(withQuery(`/products/${TIN_ENTRY_SLUG}`, query))
+    redirect(withQuery(productPath(TIN_ENTRY_SLUG), query))
   }
   const context = await getRequestContext()
   const offer = resolveOffer(product, context.touch)

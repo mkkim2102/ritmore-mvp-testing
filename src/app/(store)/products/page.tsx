@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { PriceTag } from "@/components/store/price-tag"
 import { Tracker } from "@/components/store/tracker"
-import { packChoiceLabel, shelfProductName, tinCountForSlug } from "@/lib/bundles"
+import { packChoiceLabel, productPath, shelfProductName, tinCountForSlug } from "@/lib/bundles"
 import { tinPurchaseOptions } from "@/lib/catalog"
 import { listPhotoFor } from "@/lib/list-photos"
 import { getRequestContext } from "@/lib/request"
@@ -65,7 +65,7 @@ export default async function ProductsPage() {
               return (
                 <Link
                   key={item.slug}
-                  href={`/products/${item.slug}`}
+                  href={productPath(item.slug)}
                   data-choice={item.label}
                   data-choice-slug={item.slug}
                   className="flex h-full flex-col overflow-hidden border border-solid border-[#e5e5e5] bg-white text-[#111111] shadow-none"

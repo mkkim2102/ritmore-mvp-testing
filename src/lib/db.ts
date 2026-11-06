@@ -1,11 +1,25 @@
 import fs from "node:fs"
 import path from "node:path"
 import { DatabaseSync, type SQLInputValue } from "node:sqlite"
-import { TIN_BUNDLE_SPECS, TIN_ENTRY_SLUG, bundleProductId } from "@/lib/bundles"
+import {
+  CUSTOMER_TIN_COUNTS,
+  CUSTOMER_TIN_PRICES,
+  TIN_BUNDLE_SPECS,
+  TIN_ENTRY_SLUG,
+  bundleProductId,
+  customerTinPrices,
+  internalProductSlug,
+  tinSlugForCount,
+} from "@/lib/bundles"
+import { won } from "@/lib/format"
 import { SOURCE_LINKS } from "@/lib/referrer"
 
 const globalForDb = globalThis as unknown as { storelabDb?: DatabaseSync }
 let schemaReady = false
+
+const ONE_PACK = CUSTOMER_TIN_PRICES[1]
+const LOCKED_SALE_NOTE = `ritmore 카페인 민트 캔디, ${won(ONE_PACK.sale)} 고정`
+const LOCKED_SALE_NOTE_PRODUCT = `${LOCKED_SALE_NOTE}. 상품 페이지로 갑니다.`
 
 const RITMORE = {
   name: "ritmore 카페인 민트 캔디",
@@ -28,6 +42,7 @@ export function getDb() {
     migrate(db)
     seed(db)
     convertUsdCentsToWon(db)
+    updateLegacyTinPrices(db)
     showOnlyFortyMilligram(db)
     ensureSourceLinks(db)
     globalForDb.storelabDb = db
@@ -39,7 +54,45 @@ export function getDb() {
   }
   applyRitmore(globalForDb.storelabDb)
   ensureTinBundles(globalForDb.storelabDb)
+  pointLinksAtPublicPaths(globalForDb.storelabDb)
+  ensureExampleEntryLinks(globalForDb.storelabDb)
   return globalForDb.storelabDb
+}
+
+function updateLegacyTinPrices(db: DatabaseSync) {
+  const updateProduct = db.prepare(
+    `UPDATE products SET base_price = ?, compare_at_price = ?
+     WHERE slug = ? AND base_price = ? AND compare_at_price = ?`,
+  )
+  const updateVariant = db.prepare(
+    `UPDATE variants SET price = ?, compare_at_price = ?
+     WHERE id = ? AND product_id = 'prod_sample_a' AND price = ? AND compare_at_price = 29900`,
+  )
+  db.exec("BEGIN IMMEDIATE")
+  try {
+    for (const count of CUSTOMER_TIN_COUNTS) {
+      const { sale, list } = CUSTOMER_TIN_PRICES[count]
+      updateProduct.run(sale, list, tinSlugForCount(count), 24900 * count, 29900 * count)
+    }
+    updateVariant.run(ONE_PACK.sale, ONE_PACK.list, "var_a", 24900)
+    updateVariant.run(ONE_PACK.sale, ONE_PACK.list, "var_b", 27900)
+    db.exec("COMMIT")
+  } catch (error) {
+    db.exec("ROLLBACK")
+    throw error
+  }
+}
+
+function pointLinksAtPublicPaths(db: DatabaseSync) {
+  const pairs = [
+    ["/products/sample-a", "/products/buy1"],
+    ["/products/sample-a-3", "/products/buy2"],
+    ["/products/sample-a-6", "/products/buy3"],
+    ["/checkout", "/purchase"],
+    ["/checkout/done", "/purchase/done"],
+  ] as const
+  const update = db.prepare("UPDATE links SET landing_path = ? WHERE landing_path = ?")
+  for (const [from, to] of pairs) update.run(to, from)
 }
 
 export function all<T>(sql: string, params: SQLInputValue[] = []) {
@@ -71,14 +124,8 @@ function convertUsdCentsToWon(db: DatabaseSync) {
           compare_at_price = CASE WHEN compare_at_price IS NULL THEN NULL ELSE (compare_at_price * 10 / 100) * 100 END;
       UPDATE events SET price = (price * 10 / 100) * 100 WHERE price IS NOT NULL AND price < 10000;
     `)
-    db.prepare("UPDATE links SET note = ? WHERE code = ?").run(
-      "ritmore 카페인 민트 캔디, 24,900원 고정",
-      "ig-story",
-    )
-    db.prepare("UPDATE links SET note = ? WHERE code = ?").run(
-      "ritmore 카페인 민트 캔디, 27,900원 고정. 상품 페이지로 갑니다.",
-      "yt-desc",
-    )
+    db.prepare("UPDATE links SET note = ? WHERE code = ?").run(LOCKED_SALE_NOTE, "ig-story")
+    db.prepare("UPDATE links SET note = ? WHERE code = ?").run(LOCKED_SALE_NOTE_PRODUCT, "yt-desc")
   }
 
   db.prepare(
@@ -116,14 +163,8 @@ function applyRitmore(db: DatabaseSync) {
     `INSERT INTO settings (key, value) VALUES ('brand_tagline', ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
   ).run(RITMORE.tagline)
-  db.prepare("UPDATE links SET note = ? WHERE code = ?").run(
-    "ritmore 카페인 민트 캔디, 24,900원 고정",
-    "ig-story",
-  )
-  db.prepare("UPDATE links SET note = ? WHERE code = ?").run(
-    "ritmore 카페인 민트 캔디, 27,900원 고정. 상품 페이지로 갑니다.",
-    "yt-desc",
-  )
+  db.prepare("UPDATE links SET note = ? WHERE code = ?").run(LOCKED_SALE_NOTE, "ig-story")
+  db.prepare("UPDATE links SET note = ? WHERE code = ?").run(LOCKED_SALE_NOTE_PRODUCT, "yt-desc")
   db.prepare(
     `INSERT INTO settings (key, value) VALUES ('storefront_ritmore', '1')
      ON CONFLICT(key) DO UPDATE SET value = '1'`,
@@ -142,7 +183,9 @@ function ensureTinBundles(db: DatabaseSync) {
   )
   const now = new Date().toISOString()
   for (const spec of TIN_BUNDLE_SPECS) {
-    const compare = entry.compare_at_price == null ? null : entry.compare_at_price * spec.count
+    const explicit = customerTinPrices(spec.count)
+    const sale = explicit ? explicit.sale : entry.base_price * spec.count
+    const compare = explicit ? explicit.list : entry.compare_at_price == null ? null : entry.compare_at_price * spec.count
     insert.run(
       bundleProductId(spec.slug),
       spec.slug,
@@ -150,7 +193,7 @@ function ensureTinBundles(db: DatabaseSync) {
       spec.summary,
       spec.description,
       spec.category,
-      entry.base_price * spec.count,
+      sale,
       compare,
       now,
     )
@@ -317,6 +360,39 @@ function ensureSourceLinks(db: DatabaseSync) {
   }
 }
 
+const EXAMPLE_ENTRY_LINKS = [
+  { id: "link_ex_home", code: "home", name: "홈", landingPath: "/" },
+  { id: "link_ex_buy1", code: "buy1", name: "1개 상세", landingPath: "/products/buy1" },
+  { id: "link_ex_buy2", code: "buy2", name: "3개 상세", landingPath: "/products/buy2" },
+  { id: "link_ex_buy3", code: "buy3", name: "6개 상세", landingPath: "/products/buy3" },
+  { id: "link_ex_purchase", code: "purchase", name: "구매", landingPath: "/purchase" },
+] as const
+
+const EXAMPLE_ENTRY_NOTE = "예시 진입점. 진열 가격은 기본가입니다."
+
+function exampleProductSlug(landingPath: string) {
+  const match = /^\/products\/([^/]+)$/.exec(landingPath)
+  if (!match) return TIN_ENTRY_SLUG
+  return internalProductSlug(decodeURIComponent(match[1]))
+}
+
+function ensureExampleEntryLinks(db: DatabaseSync) {
+  const now = new Date().toISOString()
+  const taken = db.prepare("SELECT 1 AS ok FROM links WHERE code = ?")
+  const productId = db.prepare("SELECT id FROM products WHERE slug = ?")
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO links
+      (id, code, name, channel, utm_source, utm_medium, utm_campaign, utm_content, landing_path, experiment_id, variant_id, product_id, note, price_override, archived, created_at)
+     VALUES (?, ?, ?, 'instagram', 'instagram', 'social', '', '', ?, NULL, NULL, ?, ?, NULL, 0, ?)`,
+  )
+  for (const link of EXAMPLE_ENTRY_LINKS) {
+    if (taken.get(link.code)) continue
+    const product = (productId.get(exampleProductSlug(link.landingPath)) ??
+      productId.get(TIN_ENTRY_SLUG)) as { id: string } | undefined
+    insert.run(link.id, link.code, link.name, link.landingPath, product?.id ?? null, EXAMPLE_ENTRY_NOTE, now)
+  }
+}
+
 function seed(db: DatabaseSync) {
   const count = db.prepare("SELECT COUNT(*) AS count FROM products").get() as { count: number }
   if (count.count > 0) return
@@ -327,6 +403,8 @@ function seed(db: DatabaseSync) {
   insertSetting.run("brand_tagline", RITMORE.tagline)
   insertSetting.run("storefront_ko", "1")
   insertSetting.run("storefront_ritmore", "1")
+  // Won already. Without this, the cent conversion multiplies any shelf price under 10,000 by 10.
+  insertSetting.run("price_unit", "krw")
 
   const insertProduct = db.prepare(
     `INSERT INTO products
@@ -340,8 +418,8 @@ function seed(db: DatabaseSync) {
     RITMORE.summary,
     RITMORE.description,
     RITMORE.category,
-    24900,
-    29900,
+    ONE_PACK.sale,
+    ONE_PACK.list,
     "active",
     RITMORE.tone,
     now,
@@ -388,8 +466,8 @@ function seed(db: DatabaseSync) {
     `INSERT INTO variants (id, product_id, experiment_id, key, label, price, compare_at_price, active)
      VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
   )
-  insertVariant.run("var_a", "prod_sample_a", "exp_price_1", "A", "기본안", 24900, 29900)
-  insertVariant.run("var_b", "prod_sample_a", "exp_price_1", "B", "인상안", 27900, 29900)
+  insertVariant.run("var_a", "prod_sample_a", "exp_price_1", "A", "기본안", ONE_PACK.sale, ONE_PACK.list)
+  insertVariant.run("var_b", "prod_sample_a", "exp_price_1", "B", "인상안", ONE_PACK.sale, ONE_PACK.list)
 
   const insertLink = db.prepare(
     `INSERT INTO links
@@ -409,7 +487,7 @@ function seed(db: DatabaseSync) {
     "exp_price_1",
     "var_a",
     "prod_sample_a",
-    "ritmore 카페인 민트 캔디, 24,900원 고정",
+    LOCKED_SALE_NOTE,
     now,
   )
   insertLink.run(
@@ -421,11 +499,11 @@ function seed(db: DatabaseSync) {
     "description",
     "price-1",
     "variant-b",
-    "/products/sample-a",
+    "/products/buy1",
     "exp_price_1",
     "var_b",
     "prod_sample_a",
-    "ritmore 카페인 민트 캔디, 27,900원 고정. 상품 페이지로 갑니다.",
+    LOCKED_SALE_NOTE_PRODUCT,
     now,
   )
   insertLink.run(
@@ -444,4 +522,5 @@ function seed(db: DatabaseSync) {
     "가격안을 강제하지 않는다. 상품 기본가가 보인다.",
     now,
   )
+  ensureExampleEntryLinks(db)
 }

@@ -8,7 +8,7 @@ export function StoreFooter() {
           <Link href="/brand" className="hover:text-[#111111]">
             브랜드
           </Link>
-          <Link href="/products/sample-a" className="hover:text-[#111111]">
+          <Link href="/products/buy1" className="hover:text-[#111111]">
             ritmore 카페인 민트 캔디
           </Link>
         </nav>

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { publicProductSlug } from "@/lib/bundles"
 import { parseItems, priceLines } from "@/lib/catalog"
 import { getRequestContext } from "@/lib/request"
 import { classifyReferrer } from "@/lib/referrer"
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
     sessionId: context.sessionId,
     linkCode: context.touch.linkCode,
     referrerClass: classifyReferrer(context.touch.referrer),
-    productSlug: lines.map((line) => line.product.slug).join(",") || null,
+    productSlug: lines.map((line) => publicProductSlug(line.product.slug)).join(",") || null,
     qty: qty || null,
     // One line keeps the unit price. Several lines store the order total; the slug list then contains a comma.
     price: lines.length === 1 ? lines[0].offer.price : lines.length > 1 ? total : null,

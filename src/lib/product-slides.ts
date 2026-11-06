@@ -1,3 +1,5 @@
+import { internalProductSlug } from "@/lib/bundles"
+
 /** 상세 갤러리 공통 슬라이드. 팩 페이지는 대표 사진이 첫 화면이다. */
 export type DetailSlide =
   | { id: string; kind: "model" }
@@ -33,11 +35,11 @@ const COVER_PHOTOS: Record<string, { src: string; alt: string; fit: "contain" | 
 }
 
 export function coverPhotoFor(slug: string) {
-  return COVER_PHOTOS[slug]?.src ?? null
+  return COVER_PHOTOS[internalProductSlug(slug)]?.src ?? null
 }
 
 export function detailSlidesFor(slug: string): DetailSlide[] {
-  const cover = COVER_PHOTOS[slug]
+  const cover = COVER_PHOTOS[internalProductSlug(slug)]
   if (!cover) return PRODUCT_DETAIL_SLIDES
   const model = PRODUCT_DETAIL_SLIDES.find((slide) => slide.kind === "model")
   const photos = PRODUCT_DETAIL_SLIDES.filter((slide) => slide.kind !== "model")

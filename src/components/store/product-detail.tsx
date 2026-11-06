@@ -289,7 +289,6 @@ export function ProductDetail({
                 {reviewScore ? <StarRow score={reviewScore} /> : null}
                 <span>{reviewSummary}</span>
               </p>
-              <p className="break-words leading-7">{landing.promise}</p>
             </div>
           </div>
         </aside>

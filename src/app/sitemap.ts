@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next"
+import { productPath } from "@/lib/bundles"
 import { listProducts } from "@/lib/catalog"
 import { absoluteUrl, isSiteIndexable } from "@/lib/seo"
 
@@ -14,7 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl("/brand"), changeFrequency: "monthly", priority: 0.6 },
     { url: absoluteUrl("/guide"), changeFrequency: "monthly", priority: 0.4 },
     ...products.map((product) => ({
-      url: absoluteUrl(`/products/${product.slug}`),
+      url: absoluteUrl(productPath(product.slug)),
       changeFrequency: "weekly" as const,
       priority: 0.8,
     })),

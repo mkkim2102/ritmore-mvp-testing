@@ -95,12 +95,6 @@ export function sourceLinkUrl(headerList: Headers, code: string) {
   return `${proto}://${host}/?link=${code}`
 }
 
-export function purchaseEntryUrl(origin: string, code: string) {
-  const url = new URL("/products/sample-a", origin)
-  url.searchParams.set("link", code)
-  return url.toString()
-}
-
 export function formatDuration(seconds: number) {
   const total = Math.max(0, Math.round(seconds))
   const hours = Math.floor(total / 3600)

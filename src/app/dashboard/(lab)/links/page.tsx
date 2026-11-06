@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { archiveLinkAction, createLinkAction } from "@/lib/actions"
+import { productPath } from "@/lib/bundles"
 import { CHANNELS, channelLabel } from "@/lib/channels"
 import { getProductById, linkHref, listLinks, listProducts, listVariants } from "@/lib/catalog"
 import { requestOrigin, won } from "@/lib/format"
@@ -94,7 +95,7 @@ export default async function LinksPage({
                 {products
                   .filter((product) => product.status === "active")
                   .map((product) => (
-                    <option key={product.id} value={`/products/${product.slug}`}>
+                    <option key={product.id} value={productPath(product.slug)}>
                       {product.name}
                     </option>
                   ))}

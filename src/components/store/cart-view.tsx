@@ -165,7 +165,7 @@ export function CartView({ initialLines = [] }: { initialLines?: QuoteLine[] }) 
       <div className="rounded-2xl border border-dashed border-border px-6 py-16 text-center">
         <p className="font-serif text-2xl">장바구니가 비어 있습니다</p>
         <p className="mt-2 text-sm text-muted-foreground">상품 페이지에서 담으면 가격이 여기에 나옵니다.</p>
-        <Button className="mt-6 h-11" render={<Link href="/products/sample-a" />}>
+        <Button className="mt-6 h-11" render={<Link href="/products/buy1" />}>
           제품 보기
         </Button>
       </div>

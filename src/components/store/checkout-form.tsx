@@ -36,7 +36,7 @@ export function CheckoutForm({ lines }: { lines: CheckoutLine[] }) {
         keepalive: true,
         body: JSON.stringify({
           step: "pay_click",
-          path: "/checkout",
+          path: "/purchase",
           productSlug: line.slug,
           qty: line.qty,
           method,
@@ -100,7 +100,7 @@ export function CheckoutForm({ lines }: { lines: CheckoutLine[] }) {
         <p className="text-sm text-muted-foreground">합계</p>
         <p className="text-2xl font-semibold tabular-nums">{won(total)}</p>
       </div>
-      <a href="/checkout/done" className={cn(buttonVariants(), "h-12 w-full text-base")} onClick={rememberPay}>
+      <a href="/purchase/done" className={cn(buttonVariants(), "h-12 w-full text-base")} onClick={rememberPay}>
         결제하기
       </a>
     </div>
