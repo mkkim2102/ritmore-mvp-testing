@@ -21,12 +21,11 @@ export default async function CustomerDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { id } = await params
-  const requested = Number((await searchParams).page)
-  const listPage = Number.isFinite(requested) && requested > 1 ? Math.floor(requested) : 1
-  const listHref = listPage > 1 ? `/dashboard/customers?page=${listPage}` : "/dashboard/customers"
+  const query = await searchParams
+  const listHref = listHrefFrom(query)
   if (!/^[A-Za-z0-9_-]{8,80}$/.test(id)) notFound()
 
   const visitor = listVisitorRollups().find((row) => row.id === id)
@@ -56,10 +55,11 @@ export default async function CustomerDetailPage({
         <Link href={listHref} className="text-sm text-muted-foreground hover:underline">
           방문자 목록
         </Link>
-        <h2 className="font-serif text-2xl">방문자 여정</h2>
+        <h2 className="font-serif text-2xl">방문자 세부</h2>
         <p className="font-mono text-xs" data-visitor={visitor.id}>
           {shortVisitorCode(visitor.id)}
         </p>
+        <p className="text-sm text-muted-foreground">이 방문자의 요약과 행동 시각입니다.</p>
       </div>
 
       <dl
@@ -105,7 +105,7 @@ export default async function CustomerDetailPage({
           </TableHeader>
           <TableBody>
             {timeline.map((item) => (
-              <TableRow key={item.id} data-timeline-step={item.step} data-amount={item.amount ?? ""}>
+              <TableRow key={item.id} data-timeline-step={item.step} data-action-at={item.createdAt} data-amount={item.amount ?? ""}>
                 <TableCell className="whitespace-nowrap">{formatWhen(item.createdAt)}</TableCell>
                 <TableCell>{item.label}</TableCell>
                 <TableCell>{item.detail || "—"}</TableCell>
@@ -117,6 +117,20 @@ export default async function CustomerDetailPage({
       </div>
     </div>
   )
+}
+
+function listHrefFrom(query: Record<string, string | string[] | undefined>) {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    if (key === "page" || value == null) continue
+    const values = Array.isArray(value) ? value : [value]
+    for (const item of values) params.append(key, item)
+  }
+  const raw = Array.isArray(query.page) ? query.page[0] : query.page
+  const requested = Number(raw)
+  if (Number.isFinite(requested) && requested > 1) params.set("page", String(Math.floor(requested)))
+  const search = params.toString()
+  return search ? `/dashboard/customers?${search}` : "/dashboard/customers"
 }
 
 function visitLines(visits: VisitStamp[]) {

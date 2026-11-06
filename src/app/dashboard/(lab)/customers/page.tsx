@@ -11,7 +11,7 @@ import {
 import { customerFacingTinName } from "@/lib/bundles"
 import { listProducts } from "@/lib/catalog"
 import { formatDuration, formatWhen, shortVisitorCode, won } from "@/lib/format"
-import { confirmedBuys, linkNames, listVisitorRollups, sourceLabel, visitorVisitAndBuyTimes } from "@/lib/journey"
+import { confirmedBuys, linkNames, listVisitorRollups, sourceLabel } from "@/lib/journey"
 import { referrerLabel } from "@/lib/referrer"
 import { cn } from "@/lib/utils"
 
@@ -19,18 +19,19 @@ export const metadata = { title: "방문자" }
 
 const PAGE_SIZE = 30
 
+type CustomerSearch = Record<string, string | string[] | undefined>
+
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<CustomerSearch>
 }) {
-  const requested = Number((await searchParams).page)
+  const query = await searchParams
   const names = linkNames()
   const rows = listVisitorRollups()
   const products = listProducts(true)
-  const moments = new Map(visitorVisitAndBuyTimes().map((item) => [item.visitorId, item]))
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
-  const page = Number.isFinite(requested) && requested >= 1 ? Math.min(Math.floor(requested), pageCount) : 1
+  const page = clampPage(query.page, pageCount)
   const start = (page - 1) * PAGE_SIZE
   const visible = rows.slice(start, start + PAGE_SIZE)
   const buys = new Map<string, string[]>()
@@ -50,7 +51,7 @@ export default async function CustomersPage({
         <p className="mt-1 text-sm text-muted-foreground">
           브라우저에 남긴 방문자 번호만 보여 줍니다. 이름과 전화번호는 저장하지 않습니다. 미리보기 방문은 빠집니다.
           구매 확정 금액은 고른 옵션의 실판매가에 수량을 곱한 합입니다. 결제 금액은 결제 버튼을 누른 합입니다.
-          이 목록은 요약입니다. 세부를 누르면 들어온 시각, 구매 확정 시각, 각 행동을 볼 수 있습니다.
+          이 목록은 요약입니다. 방문자 번호나 세부 보기를 누르면 그 방문자의 들어온 시각, 구매 확정 시각, 행동 시각을 볼 수 있습니다. 한 페이지에 30명씩 보여 줍니다.
         </p>
       </div>
 
@@ -60,7 +61,7 @@ export default async function CustomersPage({
         </p>
       ) : (
         <>
-        <Pager page={page} pageCount={pageCount} from={start + 1} to={start + visible.length} total={rows.length} />
+        <Pager page={page} pageCount={pageCount} from={start + 1} to={start + visible.length} total={rows.length} query={query} />
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -85,9 +86,8 @@ export default async function CustomersPage({
             </TableHeader>
             <TableBody>
               {visible.map((row) => {
-                const stamp = moments.get(row.id)
-                const visits = stamp?.visits ?? []
-                const buyClicks = stamp?.buyClicks ?? []
+                const href = detailHref(row.id, page, query)
+                const code = shortVisitorCode(row.id)
                 return (
                   <TableRow
                     key={row.id}
@@ -103,17 +103,15 @@ export default async function CustomersPage({
                     data-qty={row.lastQty ?? ""}
                     data-returned={row.returned ? "yes" : "no"}
                     data-dwell={row.dwellSeconds}
-                    data-arrivals={visits.map((visit) => visit.createdAt).join(",")}
-                    data-buy-times={buyClicks.map((buy) => buy.createdAt).join(",")}
                   >
-                    <TableCell className="font-mono text-xs">
-                      <Link href={detailHref(row.id, page)} className="underline-offset-2 hover:underline">
-                        {shortVisitorCode(row.id)}
+                    <TableCell className="font-mono text-xs whitespace-nowrap">
+                      <Link href={href} className="underline underline-offset-2" aria-label={`${code} 세부 보기`}>
+                        {code}
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Link href={detailHref(row.id, page)} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-                        세부
+                      <Link href={href} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                        세부 보기
                       </Link>
                     </TableCell>
                     <TableCell>
@@ -142,15 +140,15 @@ export default async function CustomersPage({
             </TableBody>
           </Table>
         </div>
-        <Pager page={page} pageCount={pageCount} from={start + 1} to={start + visible.length} total={rows.length} />
+        <Pager page={page} pageCount={pageCount} from={start + 1} to={start + visible.length} total={rows.length} query={query} />
         </>
       )}
     </div>
   )
 }
 
-function detailHref(id: string, page: number) {
-  return page > 1 ? `/dashboard/customers/${id}?page=${page}` : `/dashboard/customers/${id}`
+function detailHref(id: string, page: number, query: CustomerSearch) {
+  return customerHref(`/dashboard/customers/${id}`, page, query)
 }
 
 function Pager({
@@ -159,34 +157,62 @@ function Pager({
   from,
   to,
   total,
+  query,
 }: {
   page: number
   pageCount: number
   from: number
   to: number
   total: number
+  query: CustomerSearch
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
       <p className="text-muted-foreground tabular-nums" data-page={page} data-page-count={pageCount}>
         {from}–{to} / {total}
       </p>
-      <div className="flex gap-2">
-        {page > 1 ? (
-          <Link href={page === 2 ? "/dashboard/customers" : `/dashboard/customers?page=${page - 1}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-            이전
-          </Link>
-        ) : (
-          <span className={cn(buttonVariants({ variant: "outline", size: "sm" }), "pointer-events-none opacity-50")}>이전</span>
-        )}
-        {page < pageCount ? (
-          <Link href={`/dashboard/customers?page=${page + 1}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-            다음
-          </Link>
-        ) : (
-          <span className={cn(buttonVariants({ variant: "outline", size: "sm" }), "pointer-events-none opacity-50")}>다음</span>
-        )}
+      <div className="flex flex-wrap gap-2">
+        <PageLink href={customerHref("/dashboard/customers", page - 1, query)} disabled={page <= 1}>
+          이전
+        </PageLink>
+        <PageLink href={customerHref("/dashboard/customers", page + 1, query)} disabled={page >= pageCount}>
+          다음
+        </PageLink>
       </div>
     </div>
   )
+}
+
+function PageLink({ href, disabled, children }: { href: string; disabled: boolean; children: string }) {
+  if (disabled) {
+    return (
+      <span className={cn(buttonVariants({ variant: "outline", size: "sm" }), "pointer-events-none opacity-50")} aria-disabled="true">
+        {children}
+      </span>
+    )
+  }
+  return (
+    <Link href={href} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+      {children}
+    </Link>
+  )
+}
+
+function clampPage(raw: string | string[] | undefined, pageCount: number) {
+  const value = Array.isArray(raw) ? raw[0] : raw
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 1) return 1
+  return Math.min(Math.floor(parsed), pageCount)
+}
+
+function customerHref(path: string, page: number, current: CustomerSearch) {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(current)) {
+    if (key === "page" || value == null) continue
+    const values = Array.isArray(value) ? value : [value]
+    for (const item of values) params.append(key, item)
+  }
+  if (page > 1) params.set("page", String(page))
+  const search = params.toString()
+  return search ? `${path}?${search}` : path
 }
