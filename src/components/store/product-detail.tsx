@@ -46,27 +46,29 @@ export function ProductDetail({
   const storedReviews = listReviews(communityKey(product.slug))
   const inquiries = listInquiries(communityKey(product.slug))
   const reviewCount = storedReviews.length
+  const sampleReviewCount = landing.reviews.length
   const reviewScores = storedReviews.map((review) => review.score).filter((score) => Number.isFinite(score))
   const reviewScore = reviewScores.length
     ? (reviewScores.reduce((sum, score) => sum + score, 0) / reviewScores.length).toFixed(1)
     : null
-  const reviewSummary = reviewScore ? `평점 ${reviewScore} / 5, 후기 ${reviewCount}개` : `후기 ${reviewCount}개`
-  const previewReviews = [
-    ...storedReviews.map((review) => ({
-      key: review.id,
-      sample: false,
-      name: review.name || "익명",
-      score: review.score.toFixed(1),
-      body: review.body,
-    })),
-    ...landing.reviews.map((review, reviewIndex) => ({
-      key: `${review.name}-${review.date}-${reviewIndex}`,
-      sample: true,
-      name: review.name,
-      score: review.score,
-      body: review.body,
-    })),
-  ].slice(0, 3)
+  const visitorCards = storedReviews.map((review) => ({
+    key: review.id,
+    id: review.id,
+    source: "visitor" as const,
+    name: review.name || "익명",
+    score: review.score.toFixed(1),
+    date: communityDate(review.createdAt),
+    body: review.body,
+  }))
+  const sampleCards = landing.reviews.map((review, reviewIndex) => ({
+    key: `${review.name}-${review.date}-${reviewIndex}`,
+    source: "sample" as const,
+    name: review.name,
+    score: review.score,
+    date: review.date,
+    body: review.body,
+  }))
+  const previewReviews = (reviewCount > 0 ? visitorCards : sampleCards).slice(0, 3)
 
   return (
     <ProductBuyProvider
@@ -119,18 +121,20 @@ export function ProductDetail({
           <div className="mx-auto mt-6 max-w-6xl space-y-6 px-4 lg:mt-8 lg:max-w-none lg:px-0">
             <div className="space-y-3 border-t border-border pt-4" data-review-preview>
               {previewReviews.length > 0 ? (
-                <ul className="space-y-3">
-                  {previewReviews.map((review) => (
-                    <li key={review.key} className="text-sm">
-                      <p className="flex items-center gap-2">
-                        <span className="font-medium">{review.name}</span>
-                        <StarRow score={review.score} />
-                        {review.sample ? <span className="text-xs text-muted-foreground">예시 후기</span> : null}
-                      </p>
-                      <p className="mt-1 text-muted-foreground">{review.body}</p>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  {reviewCount === 0 ? <p className="text-xs text-muted-foreground">테스트 데이터</p> : null}
+                  <ul className="space-y-3">
+                    {previewReviews.map((review) => (
+                      <li key={review.key} className="text-sm">
+                        <p className="flex items-center gap-2">
+                          <span className="font-medium">{review.name}</span>
+                          <StarRow score={review.score} />
+                        </p>
+                        <p className="mt-1 text-muted-foreground">{review.body}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground">후기를 남길 수 있습니다.</p>
               )}
@@ -183,38 +187,23 @@ export function ProductDetail({
         <div className="mx-auto max-w-6xl px-4 py-14 lg:max-w-none lg:px-0">
           <div className="flex items-end justify-between gap-4">
             <h2 className="font-serif text-3xl">후기</h2>
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <p className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted-foreground">
               {reviewScore ? <StarRow score={reviewScore} /> : null}
-              <span>{reviewSummary}</span>
+              <span>방문자 후기 {reviewCount}개{reviewScore ? ` · 평점 ${reviewScore} / 5` : ""}</span>
             </p>
           </div>
-          {reviewCount === 0 && landing.reviews.length === 0 ? (
+          {reviewCount > 0 ? <ReviewPages reviews={visitorCards} /> : null}
+          {sampleReviewCount > 0 ? (
+            <div className="mt-8">
+              <h3 className="text-sm font-medium text-muted-foreground">테스트 데이터 {sampleReviewCount}개</h3>
+              <ReviewPages reviews={sampleCards} />
+            </div>
+          ) : null}
+          {reviewCount === 0 && sampleReviewCount === 0 ? (
             <p className="mt-8 text-sm leading-6 text-muted-foreground" data-review-empty>
               후기를 남길 수 있습니다.
             </p>
-          ) : (
-            <ReviewPages
-              reviews={[
-                ...storedReviews.map((review) => ({
-                  key: review.id,
-                  id: review.id,
-                  source: "visitor" as const,
-                  name: review.name || "익명",
-                  score: review.score.toFixed(1),
-                  date: communityDate(review.createdAt),
-                  body: review.body,
-                })),
-                ...landing.reviews.map((review, reviewIndex) => ({
-                  key: `${review.name}-${review.date}-${reviewIndex}`,
-                  source: "sample" as const,
-                  name: review.name,
-                  score: review.score,
-                  date: review.date,
-                  body: review.body,
-                })),
-              ]}
-            />
-          )}
+          ) : null}
           <ReviewForm slug={product.slug} />
         </div>
       </section>

@@ -184,9 +184,6 @@ export function ReviewPages({ reviews }: { reviews: ReviewCard[] }) {
                     <p className="text-sm font-medium text-[#111111]">{review.name}</p>
                     <Stars score={review.score} />
                     <p className="text-[12px] leading-4 text-[#8a8a8a]">{review.date}</p>
-                    {review.source === "sample" ? (
-                      <p className="text-xs text-muted-foreground">예시 후기</p>
-                    ) : null}
                   </div>
                   <p className="mt-2 text-sm leading-6 break-words whitespace-pre-wrap text-[#222222]">{review.body}</p>
                 </article>
