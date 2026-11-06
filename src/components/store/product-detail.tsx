@@ -285,10 +285,6 @@ export function ProductDetail({
                 </p>
               </div>
               <BuyPanel shippingAnchor priceSize="rail" />
-              <p className="flex min-w-0 flex-wrap items-center gap-2 text-sm break-words text-muted-foreground">
-                {reviewScore ? <StarRow score={reviewScore} /> : null}
-                <span>{reviewSummary}</span>
-              </p>
             </div>
           </div>
         </aside>
