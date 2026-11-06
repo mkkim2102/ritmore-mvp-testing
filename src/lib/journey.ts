@@ -1,6 +1,4 @@
-import { customerFacingTinName } from "@/lib/bundles"
-import { listLinks, listProducts } from "@/lib/catalog"
-import type { Product } from "@/lib/types"
+import { listLinks } from "@/lib/catalog"
 import { all } from "@/lib/db"
 import { formatDuration, won } from "@/lib/format"
 import { STEP_LABEL, type Step } from "@/lib/funnel"
@@ -352,6 +350,68 @@ export function confirmedBuys() {
   )
 }
 
+export type VisitStamp = {
+  createdAt: string
+  path: string
+}
+
+export type BuyClickStamp = {
+  createdAt: string
+  productId: string | null
+  qty: number | null
+  price: number | null
+}
+
+export type VisitorVisitAndBuyTimes = {
+  visitorId: string
+  visits: VisitStamp[]
+  buyClicks: BuyClickStamp[]
+}
+
+export function visitorVisitAndBuyTimes(visitorId?: string) {
+  const clauses = ["preview = 0", "step IN ('visit', 'buy_click')"]
+  const params: string[] = []
+  if (visitorId) {
+    clauses.push("visitor_id = ?")
+    params.push(visitorId)
+  }
+  const rows = all<{
+    visitor_id: string
+    created_at: string
+    step: string
+    path: string
+    product_id: string | null
+    qty: number | null
+    price: number | null
+  }>(
+    `SELECT visitor_id, created_at, step, path, product_id, qty, price
+     FROM events
+     WHERE ${clauses.join(" AND ")}
+     ORDER BY created_at ASC, id ASC`,
+    params,
+  )
+
+  const grouped = new Map<string, VisitorVisitAndBuyTimes>()
+  for (const row of rows) {
+    let entry = grouped.get(row.visitor_id)
+    if (!entry) {
+      entry = { visitorId: row.visitor_id, visits: [], buyClicks: [] }
+      grouped.set(row.visitor_id, entry)
+    }
+    if (row.step === "visit") {
+      entry.visits.push({ createdAt: row.created_at, path: row.path || "" })
+      continue
+    }
+    entry.buyClicks.push({
+      createdAt: row.created_at,
+      productId: row.product_id || null,
+      qty: row.qty == null ? null : Number(row.qty),
+      price: row.price == null ? null : Number(row.price),
+    })
+  }
+  return [...grouped.values()]
+}
+
 const PURCHASE_STEPS = new Set(["buy_click", "add_to_cart", "pay_click"])
 
 export function eventPurchaseAmount(step: string, price: number | null, qty: number | null) {
@@ -364,18 +424,15 @@ export function eventPurchaseAmount(step: string, price: number | null, qty: num
 
 export type TimelineItem = {
   id: string
-  visitorId: string
   createdAt: string
   step: string
   label: string
   detail: string
-  note: string
   amount: number | null
 }
 
 type TimelineRow = {
   id: string
-  visitor_id: string
   created_at: string
   step: string
   path: string
@@ -393,75 +450,28 @@ type TimelineRow = {
   meta: string | null
 }
 
-const TIMELINE_SQL = `SELECT id, visitor_id, created_at, step, path, link_code, channel, source, medium, campaign, content,
-            referrer, referrer_class, product_id, price, qty, meta
-     FROM events`
-
-export function listActionTimes() {
-  const rows = all<TimelineRow>(
-    `${TIMELINE_SQL}
-     WHERE preview = 0
-     ORDER BY created_at ASC, id ASC`,
-  )
-  const names = linkNames()
-  const products = listProducts(true)
-  return rows.map((row) => toTimelineItem(row, names, products))
-}
-
 export function visitorTimeline(visitorId: string) {
   const rows = all<TimelineRow>(
-    `${TIMELINE_SQL}
+    `SELECT id, created_at, step, path, link_code, channel, source, medium, campaign, content,
+            referrer, referrer_class, product_id, price, qty, meta
+     FROM events
      WHERE visitor_id = ? AND preview = 0
      ORDER BY created_at ASC, id ASC`,
     [visitorId],
   )
   const names = linkNames()
-  const products = listProducts(true)
-  return rows.map((row) => toTimelineItem(row, names, products))
-}
-
-function toTimelineItem(row: TimelineRow, names: Map<string, string>, products: Product[]): TimelineItem {
-  return {
+  return rows.map((row): TimelineItem => ({
     id: row.id,
-    visitorId: row.visitor_id,
     createdAt: row.created_at,
     step: row.step,
     label: STEP_LABEL[row.step as Step] || row.step,
-    detail: timelineDetail(row, names, products),
-    note: actionNote(row, products),
+    detail: timelineDetail(row, names),
     amount: eventPurchaseAmount(row.step, row.price, row.qty),
-  }
+  }))
 }
 
-function productLabel(productId: string | null, products: Product[]) {
-  if (!productId) return ""
-  const product = products.find((item) => item.id === productId)
-  return product ? customerFacingTinName(product.name, product.slug) : ""
-}
-
-function actionNote(row: TimelineRow, products: Product[]) {
+function timelineDetail(row: TimelineRow, names: Map<string, string>) {
   const parts: string[] = []
-  const label = productLabel(row.product_id, products)
-  if (label) parts.push(label)
-  if (row.step === "dwell") {
-    const meta = readMeta(row.meta)
-    const page = typeof meta.page === "string" ? DWELL_PAGE[meta.page] || "페이지" : "페이지"
-    parts.push(`${page} ${formatDuration(Number(meta.seconds) || 0)}`)
-  } else if (row.qty != null) {
-    parts.push(`${row.qty}개`)
-  }
-  const amount = eventPurchaseAmount(row.step, row.price, row.qty)
-  if (amount != null) parts.push(won(amount))
-  if (!label && row.path && (row.step === "visit" || row.step === "return" || row.step === "cart_view" || row.step === "checkout_view")) {
-    parts.push(row.path)
-  }
-  return parts.join(" · ")
-}
-
-function timelineDetail(row: TimelineRow, names: Map<string, string>, products: Product[]) {
-  const parts: string[] = []
-  const label = productLabel(row.product_id, products)
-  if (label) parts.push(label)
   if (row.step === "dwell") {
     const meta = readMeta(row.meta)
     const page = typeof meta.page === "string" ? DWELL_PAGE[meta.page] || "페이지" : "페이지"

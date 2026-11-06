@@ -8,8 +8,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { customerFacingTinName } from "@/lib/bundles"
+import { listProducts } from "@/lib/catalog"
 import { formatDuration, formatWhen, shortVisitorCode, won } from "@/lib/format"
-import { linkNames, listVisitorRollups, sourceLabel, visitorTimeline } from "@/lib/journey"
+import { linkNames, listVisitorRollups, sourceLabel, visitorTimeline, visitorVisitAndBuyTimes, type BuyClickStamp, type VisitStamp } from "@/lib/journey"
 import { referrerLabel } from "@/lib/referrer"
 
 export const metadata = { title: "방문자 여정" }
@@ -34,6 +36,10 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   }
 
   const names = linkNames()
+  const products = listProducts(true)
+  const moments = visitorVisitAndBuyTimes(id)[0]
+  const visits = moments?.visits ?? []
+  const buyClicks = moments?.buyClicks ?? []
 
   return (
     <div className="space-y-6">
@@ -55,6 +61,14 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         <Item label="첫 출처" value={sourceLabel(visitor.sourceKey, names)} />
         <Item label="처음" value={formatWhen(visitor.firstSeen)} />
         <Item label="마지막" value={formatWhen(visitor.lastSeen)} />
+        <div className="sm:col-span-2 lg:col-span-3" data-arrivals={visits.map((visit) => visit.createdAt).join(",")}>
+          <dt className="text-xs text-muted-foreground">들어온 시각</dt>
+          <dd className="mt-1">{visitLines(visits)}</dd>
+        </div>
+        <div className="sm:col-span-2 lg:col-span-3" data-buy-times={buyClicks.map((buy) => buy.createdAt).join(",")}>
+          <dt className="text-xs text-muted-foreground">구매 확정 시각</dt>
+          <dd className="mt-1">{buyLines(buyClicks, products)}</dd>
+        </div>
         <Item label="체류" value={visitor.dwellSeconds > 0 ? formatDuration(visitor.dwellSeconds) : "없음"} />
         <Item label="다시 방문" value={visitor.returned ? "예" : "아니오"} />
         <Item label="첫 구매하기" value={`${visitor.buyOpens}회`} />
@@ -68,10 +82,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         <Item label="후기" value={visitor.reviewClick ? "예" : "아니오"} />
       </dl>
 
-      <div className="space-y-3">
-        <h3 className="font-serif text-xl">행동 시각</h3>
-        <p className="text-sm text-muted-foreground">들어온 시각부터 구매 확정까지, 기록된 행동을 시간순으로 보여 줍니다.</p>
-        <div className="overflow-x-auto">
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -82,7 +93,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
           </TableHeader>
           <TableBody>
             {timeline.map((item) => (
-              <TableRow key={item.id} data-timeline-step={item.step} data-action-at={item.createdAt} data-amount={item.amount ?? ""}>
+              <TableRow key={item.id} data-timeline-step={item.step} data-amount={item.amount ?? ""}>
                 <TableCell className="whitespace-nowrap">{formatWhen(item.createdAt)}</TableCell>
                 <TableCell>{item.label}</TableCell>
                 <TableCell>{item.detail || "—"}</TableCell>
@@ -90,10 +101,39 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             ))}
           </TableBody>
         </Table>
-        </div>
       </div>
     </div>
   )
+}
+
+function visitLines(visits: VisitStamp[]) {
+  if (visits.length === 0) return "—"
+  return visits.map((visit, index) => (
+    <span key={`${visit.createdAt}-${index}`} className="block whitespace-nowrap text-xs">
+      {formatWhen(visit.createdAt)}
+      {visit.path ? <span className="text-muted-foreground"> {visit.path}</span> : null}
+    </span>
+  ))
+}
+
+function buyLines(buys: BuyClickStamp[], products: ReturnType<typeof listProducts>) {
+  if (buys.length === 0) return "—"
+  return buys.map((buy, index) => {
+    const note = buyOptionNote(buy, products)
+    return (
+      <span key={`${buy.createdAt}-${index}`} className="block whitespace-nowrap text-xs">
+        {formatWhen(buy.createdAt)}
+        {note ? <> {note}</> : null}
+      </span>
+    )
+  })
+}
+
+function buyOptionNote(buy: BuyClickStamp, products: ReturnType<typeof listProducts>) {
+  const product = buy.productId ? products.find((item) => item.id === buy.productId) : undefined
+  const name = product ? customerFacingTinName(product.name, product.slug) : buy.productId || ""
+  const count = buy.qty == null ? "" : `${buy.qty}개`
+  return [name, count].filter(Boolean).join(" ")
 }
 
 function Item({ label, value }: { label: string; value: string }) {
