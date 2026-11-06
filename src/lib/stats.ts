@@ -198,16 +198,25 @@ export function variantStats(filters: StatsFilters) {
 export type EventRow = {
   id: string
   createdAt: string
+  visitorId: string
   sessionId: string
   step: Step
   path: string
   linkCode: string
   channel: string
+  source: string
+  medium: string
+  campaign: string
+  content: string
+  referrer: string
   referrerClass: string
+  experimentId: string
   productId: string
   variantId: string
   price: number | null
+  qty: number | null
   preview: boolean
+  meta: string
 }
 
 export function recentEvents(filters: StatsFilters) {
@@ -215,18 +224,28 @@ export function recentEvents(filters: StatsFilters) {
   return all<{
     id: string
     created_at: string
+    visitor_id: string
     session_id: string
     step: Step
     path: string
     link_code: string | null
     channel: string
+    source: string | null
+    medium: string | null
+    campaign: string | null
+    content: string | null
+    referrer: string | null
     referrer_class: string | null
+    experiment_id: string | null
     product_id: string | null
     variant_id: string | null
     price: number | null
+    qty: number | null
     preview: number
+    meta: string | null
   }>(
-    `SELECT id, created_at, session_id, step, path, link_code, channel, referrer_class, product_id, variant_id, price, preview
+    `SELECT id, created_at, visitor_id, session_id, step, path, link_code, channel, source, medium, campaign, content,
+            referrer, referrer_class, experiment_id, product_id, variant_id, price, qty, preview, meta
      FROM events
      WHERE ${where.sql}
      ORDER BY created_at DESC
@@ -236,16 +255,25 @@ export function recentEvents(filters: StatsFilters) {
     (row): EventRow => ({
       id: row.id,
       createdAt: row.created_at,
+      visitorId: row.visitor_id,
       sessionId: row.session_id,
       step: row.step,
       path: row.path,
       linkCode: row.link_code || "",
       channel: row.channel,
+      source: row.source || "",
+      medium: row.medium || "",
+      campaign: row.campaign || "",
+      content: row.content || "",
+      referrer: row.referrer || "",
       referrerClass: row.referrer_class || "direct",
+      experimentId: row.experiment_id || "",
       productId: row.product_id || "",
       variantId: row.variant_id || "",
       price: row.price,
+      qty: row.qty,
       preview: row.preview === 1,
+      meta: row.meta || "",
     }),
   )
 }

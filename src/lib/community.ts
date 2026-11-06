@@ -20,6 +20,7 @@ export type StoredReview = {
 export type StoredInquiry = {
   id: string
   createdAt: string
+  productKey: string
   body: string
   name: string
   answer: string | null
@@ -38,6 +39,7 @@ type ReviewRow = {
 type InquiryRow = {
   id: string
   created_at: string
+  product_key: string
   body: string
   name: string
   answer: string | null
@@ -61,7 +63,7 @@ export function listReviews(productKey: string) {
 
 export function listInquiries(productKey: string) {
   return all<InquiryRow>(
-    `SELECT id, created_at, body, name, answer, answered_at, is_private
+    `SELECT id, created_at, product_key, body, name, answer, answered_at, is_private
      FROM inquiries
      WHERE product_key = ? AND is_private = 0
      ORDER BY created_at DESC`,
@@ -71,7 +73,7 @@ export function listInquiries(productKey: string) {
 
 export function listAllInquiries() {
   return all<InquiryRow>(
-    `SELECT id, created_at, body, name, answer, answered_at, is_private
+    `SELECT id, created_at, product_key, body, name, answer, answered_at, is_private
      FROM inquiries
      ORDER BY created_at DESC`,
   ).map(toInquiry)
@@ -131,6 +133,7 @@ function toInquiry(row: InquiryRow): StoredInquiry {
   return {
     id: row.id,
     createdAt: row.created_at,
+    productKey: row.product_key,
     body: row.body,
     name: row.name,
     answer: row.answer,

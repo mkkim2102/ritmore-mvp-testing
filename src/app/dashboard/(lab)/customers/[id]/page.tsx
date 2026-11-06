@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table"
 import { formatDuration, formatWhen, shortVisitorCode, won } from "@/lib/format"
 import { linkNames, listVisitorRollups, sourceLabel, visitorTimeline } from "@/lib/journey"
+import { referrerLabel } from "@/lib/referrer"
 
 export const metadata = { title: "방문자 여정" }
 
@@ -48,7 +49,8 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
       <dl
         className="grid gap-3 rounded-2xl border border-border bg-card p-4 text-sm sm:grid-cols-2 lg:grid-cols-3"
-        data-purchase-amount={visitor.payAmount}
+        data-purchase-amount={visitor.buyAmount}
+        data-pay-amount={visitor.payAmount}
       >
         <Item label="첫 출처" value={sourceLabel(visitor.sourceKey, names)} />
         <Item label="처음" value={formatWhen(visitor.firstSeen)} />
@@ -57,7 +59,9 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         <Item label="다시 방문" value={visitor.returned ? "예" : "아니오"} />
         <Item label="첫 구매하기" value={`${visitor.buyOpens}회`} />
         <Item label="구매 확정" value={`${visitor.buyClicks}회`} />
-        <Item label="구매액" value={won(visitor.payAmount)} />
+        <Item label="구매 확정 금액" value={won(visitor.buyAmount)} />
+        <Item label="결제 금액" value={won(visitor.payAmount)} />
+        <Item label="리퍼러" value={referrerLabel(visitor.referrerClass)} />
         <Item label="장바구니 담기" value={visitor.addedCart ? "예" : "아니오"} />
         <Item label="장바구니 입장" value={visitor.viewedCart ? "예" : "아니오"} />
         <Item label="수량" value={visitor.lastQty == null ? "없음" : String(visitor.lastQty)} />

@@ -1,5 +1,8 @@
 import { answerInquiryAction } from "@/lib/community-actions"
-import { communityDate, listAllInquiries } from "@/lib/community"
+import { customerFacingTinName } from "@/lib/bundles"
+import { listProducts } from "@/lib/catalog"
+import type { Product } from "@/lib/types"
+import { TIN_COMMUNITY_KEY, communityDate, listAllInquiries } from "@/lib/community"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -14,6 +17,7 @@ export default async function InquiriesPage({
 }) {
   const query = await searchParams
   const rows = listAllInquiries()
+  const products = listProducts(true)
 
   return (
     <div className="space-y-6">
@@ -39,6 +43,7 @@ export default async function InquiriesPage({
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-medium">{row.name || "익명"}</p>
+                  <p className="text-xs text-muted-foreground">{inquiryProduct(row.productKey, products)}</p>
                   {row.isPrivate ? (
                     <span
                       className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium"
@@ -76,4 +81,10 @@ export default async function InquiriesPage({
       )}
     </div>
   )
+}
+
+function inquiryProduct(productKey: string, products: Product[]) {
+  if (productKey === TIN_COMMUNITY_KEY) return "리트모어"
+  const product = products.find((item) => item.slug === productKey || item.id === productKey)
+  return product ? customerFacingTinName(product.name, product.slug) : productKey || "—"
 }

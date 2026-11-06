@@ -7,7 +7,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { customerFacingTinName } from "@/lib/bundles"
+import { getProductBySlug } from "@/lib/catalog"
 import { shortVisitorCode, won } from "@/lib/format"
+import { referrerLabel } from "@/lib/referrer"
 import { listSurveys } from "@/lib/survey"
 
 export const metadata = { title: "설문" }
@@ -16,6 +19,19 @@ function surveyAmount(row: { product_slug: string | null; price: number | null; 
   if (row.price == null || row.qty == null) return ""
   const stacked = (row.product_slug ?? "").includes(",")
   return won(stacked ? row.price : row.price * row.qty)
+}
+
+function surveyProduct(raw: string | null) {
+  if (!raw) return "—"
+  return raw
+    .split(",")
+    .map((part) => part.split(":")[0])
+    .filter(Boolean)
+    .map((slug) => {
+      const product = getProductBySlug(slug)
+      return product ? customerFacingTinName(product.name, product.slug) : slug
+    })
+    .join(", ")
 }
 
 function seoulStamp(iso: string) {
@@ -56,7 +72,10 @@ export default function SurveysPage() {
               <TableRow>
                 <TableHead>시각</TableHead>
                 <TableHead>방문자</TableHead>
-                <TableHead>출처</TableHead>
+                <TableHead>상품</TableHead>
+                <TableHead>링크</TableHead>
+                <TableHead>리퍼러</TableHead>
+                <TableHead>세션</TableHead>
                 <TableHead>구매 이유</TableHead>
                 <TableHead>마음에 든 점</TableHead>
                 <TableHead>확인하고 싶은 점</TableHead>
@@ -71,7 +90,10 @@ export default function SurveysPage() {
                 <TableRow key={row.id}>
                   <TableCell className="whitespace-nowrap text-xs">{seoulStamp(row.created_at)}</TableCell>
                   <TableCell className="font-mono text-xs">{shortVisitorCode(row.visitor_id)}</TableCell>
-                  <TableCell className="text-xs">{row.link_code || row.referrer_class || "직접"}</TableCell>
+                  <TableCell className="text-xs">{surveyProduct(row.product_slug)}</TableCell>
+                  <TableCell className="font-mono text-xs">{row.link_code || "—"}</TableCell>
+                  <TableCell className="text-xs">{referrerLabel(row.referrer_class)}</TableCell>
+                  <TableCell className="font-mono text-xs">{row.session_id.slice(0, 8)}</TableCell>
                   <TableCell className="max-w-xs whitespace-normal">{row.ease}</TableCell>
                   <TableCell className="max-w-xs whitespace-normal">{row.second_press}</TableCell>
                   <TableCell className="max-w-xs whitespace-normal">

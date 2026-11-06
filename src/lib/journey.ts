@@ -338,6 +338,18 @@ export function funnelBySource(rows: VisitorRollup[], names: Map<string, string>
     .sort((a, b) => b.visits - a.visits || b.visitors - a.visitors || a.label.localeCompare(b.label, "ko"))
 }
 
+export function confirmedBuys() {
+  return all<{ visitor_id: string; product_id: string; qty: number; amount: number }>(
+    `SELECT visitor_id,
+            product_id,
+            SUM(CASE WHEN qty IS NULL THEN 1 ELSE qty END) AS qty,
+            SUM(CASE WHEN price IS NULL THEN 0 ELSE price * CASE WHEN qty IS NULL THEN 1 ELSE qty END END) AS amount
+     FROM events
+     WHERE preview = 0 AND step = 'buy_click' AND ifnull(product_id, '') != ''
+     GROUP BY visitor_id, product_id`,
+  )
+}
+
 const PURCHASE_STEPS = new Set(["buy_click", "add_to_cart", "pay_click"])
 
 export function eventPurchaseAmount(step: string, price: number | null, qty: number | null) {
@@ -363,6 +375,14 @@ type TimelineRow = {
   step: string
   path: string
   link_code: string | null
+  channel: string | null
+  source: string | null
+  medium: string | null
+  campaign: string | null
+  content: string | null
+  referrer: string | null
+  referrer_class: string | null
+  product_id: string | null
   price: number | null
   qty: number | null
   meta: string | null
@@ -370,7 +390,8 @@ type TimelineRow = {
 
 export function visitorTimeline(visitorId: string) {
   const rows = all<TimelineRow>(
-    `SELECT id, created_at, step, path, link_code, price, qty, meta
+    `SELECT id, created_at, step, path, link_code, channel, source, medium, campaign, content,
+            referrer, referrer_class, product_id, price, qty, meta
      FROM events
      WHERE visitor_id = ? AND preview = 0
      ORDER BY created_at ASC, id ASC`,
@@ -397,13 +418,34 @@ function timelineDetail(row: TimelineRow, names: Map<string, string>) {
   }
   if (row.qty != null) parts.push(`수량 ${row.qty}`)
   if (row.price != null && row.step !== "dwell" && row.step !== "return" && row.step !== "visit") {
-    parts.push(won(row.price))
+    parts.push(`단가 ${won(row.price)}`)
   }
   const amount = eventPurchaseAmount(row.step, row.price, row.qty)
-  if (amount != null) parts.push(`구매액 ${won(amount)}`)
+  if (amount != null) parts.push(`합계 ${won(amount)}`)
   if (row.link_code) parts.push(names.get(row.link_code) || row.link_code)
+  if (row.channel) parts.push(`채널 ${row.channel}`)
+  if (row.source) parts.push(`소스 ${row.source}`)
+  if (row.medium) parts.push(`매체 ${row.medium}`)
+  if (row.campaign) parts.push(`캠페인 ${row.campaign}`)
+  if (row.content) parts.push(`콘텐츠 ${row.content}`)
+  if (row.referrer_class) parts.push(referrerLabel(row.referrer_class))
+  if (row.referrer) parts.push(row.referrer)
   if (row.path) parts.push(row.path)
+  const meta = readMeta(row.meta)
+  const extra = metaLine(meta)
+  if (row.step !== "dwell" && extra) parts.push(extra)
   return parts.join(" / ")
+}
+
+function metaLine(meta: Record<string, unknown>) {
+  const parts: string[] = []
+  if (typeof meta.method === "string") {
+    const method = meta.method === "card" ? "카드" : meta.method === "easy" ? "간편결제" : meta.method === "transfer" ? "계좌이체" : meta.method
+    parts.push(method)
+  }
+  if (typeof meta.nameFilled === "boolean") parts.push(meta.nameFilled ? "이름 입력" : "이름 없음")
+  if (typeof meta.phoneFilled === "boolean") parts.push(meta.phoneFilled ? "전화 입력" : "전화 없음")
+  return parts.join(", ")
 }
 
 function readMeta(raw: string | null) {

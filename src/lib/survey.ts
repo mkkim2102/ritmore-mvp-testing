@@ -54,6 +54,7 @@ export type SurveyRow = {
   id: string
   created_at: string
   visitor_id: string
+  session_id: string
   link_code: string | null
   referrer_class: string | null
   product_slug: string | null
