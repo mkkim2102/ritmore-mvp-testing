@@ -10,13 +10,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { createEntryAction, deleteEntryAction, updateShelfPriceAction } from "@/lib/actions"
 import { TIN_FAMILY, customerTinLabel, isCustomerTinSlug, productPath } from "@/lib/bundles"
 import { getProductBySlug, listLinks, listVariants } from "@/lib/catalog"
+import { CHANNELS, channelLabel } from "@/lib/channels"
 import { defaultEntryPath, entryPublicUrl, entryTargets, PUBLIC_ENTRY_ORIGIN } from "@/lib/entry"
 import { discountRate, won } from "@/lib/format"
 import type { TrackingLink, Variant } from "@/lib/types"
 
 export const metadata = { title: "마스터" }
 
-const ORDER = ["instagram", "naver", "google", "ai", "ig-story", "yt-desc", "direct-home"]
+const ORDER = ["n7q4", "h2v8", "r6c1", "w3m9", "instagram", "naver", "google", "ai", "ig-story", "yt-desc", "direct-home"]
 
 export default async function MasterPage({
   searchParams,
@@ -177,14 +178,29 @@ export default async function MasterPage({
           <CardDescription>
             짧은 이름, 메모, 가격 고정을 저장하면 코드가 생깁니다. 영문으로 적으면 그 글자가 코드가 됩니다. blog
             라고 적으면 코드는 blog 입니다. 가격을 비우면 진열 가격입니다. 공개 주소는 {PUBLIC_ENTRY_ORIGIN}{" "}
-            과 고른 경로이고, 방문 기록은 인스타그램으로 남습니다.
+            과 고른 경로입니다. 주소에는 채널 이름이 들어가지 않고, 방문 기록에만 고른 채널이 남습니다.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={createEntryAction} className="grid gap-4 md:grid-cols-2" data-entry-form>
             <div className="space-y-2">
               <Label htmlFor="entry-name">짧은 이름</Label>
-              <Input id="entry-name" name="name" className="h-9" placeholder="blog" required />
+              <Input id="entry-name" name="name" className="h-9" placeholder="봄 게시물" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="entry-channel">기록할 채널</Label>
+              <select
+                id="entry-channel"
+                name="channel"
+                className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                defaultValue="instagram"
+              >
+                {CHANNELS.map((channel) => (
+                  <option key={channel.id} value={channel.id}>
+                    {channel.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="entry-price">가격 고정 (원)</Label>
@@ -225,7 +241,7 @@ export default async function MasterPage({
                 <CardHeader>
                   <CardTitle>{link.name}</CardTitle>
                   <CardDescription>
-                    코드 {link.code} / {price.text}
+                    {channelLabel(link.channel)} / {price.text}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">

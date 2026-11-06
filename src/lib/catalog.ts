@@ -271,10 +271,6 @@ export function priceLines(items: { slug: string; qty: number }[], touch: Touch)
 export function linkHref(origin: string, link: TrackingLink, preview = false) {
   const url = new URL(publicLandingPath(link.landingPath || "/"), origin)
   url.searchParams.set("link", link.code)
-  if (link.utmSource) url.searchParams.set("utm_source", link.utmSource)
-  if (link.utmMedium) url.searchParams.set("utm_medium", link.utmMedium)
-  if (link.utmCampaign) url.searchParams.set("utm_campaign", link.utmCampaign)
-  if (link.utmContent) url.searchParams.set("utm_content", link.utmContent)
   if (preview) url.searchParams.set("preview", "1")
   return url.toString()
 }

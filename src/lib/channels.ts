@@ -1,5 +1,8 @@
 export const CHANNELS = [
   { id: "instagram", label: "인스타그램", source: "instagram", medium: "social" },
+  { id: "igads", label: "인스타 광고", source: "instagram", medium: "paid" },
+  { id: "fes", label: "fes", source: "fes", medium: "referral" },
+  { id: "ops", label: "내부 운영", source: "ops", medium: "none" },
   { id: "youtube", label: "유튜브", source: "youtube", medium: "video" },
   { id: "kakao", label: "카카오", source: "kakao", medium: "message" },
   { id: "naver", label: "네이버", source: "naver", medium: "cpc" },

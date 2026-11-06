@@ -65,9 +65,14 @@ export function normalizeEntrySuffix(raw: string) {
   return normalized
 }
 
-export function entryCodeFor(name: string, suffix: string) {
+/** Public codes are opaque. A name like fes or instagram is not written into the URL. */
+export function opaqueEntryCode() {
+  return `k${randomUUID().replace(/-/g, "").slice(0, 7)}`
+}
+
+export function entryCodeFor(_name: string, suffix: string) {
   const pathCode = linkCodeFromPath(new URL(suffix, PUBLIC_ENTRY_ORIGIN).pathname)
-  return pathCode ?? entryCodeFromName(name)
+  return pathCode ?? opaqueEntryCode()
 }
 
 /**

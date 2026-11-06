@@ -118,10 +118,6 @@ export function ProductDetail({
 
           <div className="mx-auto mt-6 max-w-6xl space-y-6 px-4 lg:mt-8 lg:max-w-none lg:px-0">
             <div className="space-y-3 border-t border-border pt-4" data-review-preview>
-              <a href="#reviews" className="flex flex-wrap items-center gap-2 text-sm text-[#111111]">
-                {reviewScore ? <StarRow score={reviewScore} /> : null}
-                <span>{reviewSummary}</span>
-              </a>
               {previewReviews.length > 0 ? (
                 <ul className="space-y-3">
                   {previewReviews.map((review) => (

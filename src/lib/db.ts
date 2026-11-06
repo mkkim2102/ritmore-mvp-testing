@@ -56,6 +56,7 @@ export function getDb() {
   ensureTinBundles(globalForDb.storelabDb)
   pointLinksAtPublicPaths(globalForDb.storelabDb)
   ensureExampleEntryLinks(globalForDb.storelabDb)
+  ensureInflowLinks(globalForDb.storelabDb)
   return globalForDb.storelabDb
 }
 
@@ -376,6 +377,68 @@ function exampleProductSlug(landingPath: string) {
   return internalProductSlug(decodeURIComponent(match[1]))
 }
 
+const INFLOW_LINKS = [
+  {
+    id: "link_in_ig",
+    code: "n7q4",
+    name: "인스타",
+    channel: "instagram",
+    source: "instagram",
+    medium: "social",
+  },
+  {
+    id: "link_in_igads",
+    code: "h2v8",
+    name: "인스타 광고",
+    channel: "igads",
+    source: "instagram",
+    medium: "paid",
+  },
+  {
+    id: "link_in_fes",
+    code: "r6c1",
+    name: "fes",
+    channel: "fes",
+    source: "fes",
+    medium: "referral",
+  },
+  {
+    id: "link_in_ops",
+    code: "w3m9",
+    name: "내부 운영",
+    channel: "ops",
+    source: "ops",
+    medium: "none",
+  },
+] as const
+
+function ensureInflowLinks(db: DatabaseSync) {
+  const now = new Date().toISOString()
+  const taken = db.prepare("SELECT 1 AS ok FROM links WHERE code = ?")
+  const product = db.prepare("SELECT id FROM products WHERE slug = ?").get(TIN_ENTRY_SLUG) as
+    | { id: string }
+    | undefined
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO links
+      (id, code, name, channel, utm_source, utm_medium, utm_campaign, utm_content, landing_path, experiment_id, variant_id, product_id, note, price_override, archived, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, '', '', '/products/buy1', NULL, NULL, ?, ?, NULL, 0, ?)`,
+  )
+  for (const link of INFLOW_LINKS) {
+    if (taken.get(link.code)) continue
+    insert.run(
+      link.id,
+      link.code,
+      link.name,
+      link.channel,
+      link.source,
+      link.medium,
+      product?.id ?? null,
+      "주소에는 출처가 없고, 운영화면 기록에만 채널이 남습니다.",
+      now,
+    )
+  }
+}
+
 function ensureExampleEntryLinks(db: DatabaseSync) {
   const now = new Date().toISOString()
   const taken = db.prepare("SELECT 1 AS ok FROM links WHERE code = ?")
@@ -523,4 +586,5 @@ function seed(db: DatabaseSync) {
     now,
   )
   ensureExampleEntryLinks(db)
+  ensureInflowLinks(db)
 }

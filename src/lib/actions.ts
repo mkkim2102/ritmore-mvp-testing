@@ -337,6 +337,7 @@ const entrySchema = z.object({
   name: z.string().trim().min(1).max(40),
   note: z.string().trim().max(200),
   priceOverride: z.string().trim().max(20),
+  channel: z.string().trim().min(1),
 })
 
 export async function createEntryAction(formData: FormData) {
@@ -345,6 +346,7 @@ export async function createEntryAction(formData: FormData) {
     name: formData.get("name"),
     note: formData.get("note"),
     priceOverride: formData.get("priceOverride") ?? "",
+    channel: formData.get("channel") || "instagram",
   })
   if (!parsed.success) fail("/dashboard/master", "진입점 입력을 확인해 주세요.")
 
@@ -367,7 +369,7 @@ export async function createEntryAction(formData: FormData) {
   const code = entryCodeFor(parsed.data.name, suffix)
   if (getLinkByCode(code)) fail("/dashboard/master", "이미 있는 코드입니다. 다른 이름을 적어 주세요.")
 
-  const channel = channelById("instagram")
+  const channel = channelById(parsed.data.channel)
   try {
     run(
       `INSERT INTO links
