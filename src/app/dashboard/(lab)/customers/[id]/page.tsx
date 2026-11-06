@@ -16,8 +16,17 @@ import { referrerLabel } from "@/lib/referrer"
 
 export const metadata = { title: "방문자 여정" }
 
-export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CustomerDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ page?: string }>
+}) {
   const { id } = await params
+  const requested = Number((await searchParams).page)
+  const listPage = Number.isFinite(requested) && requested > 1 ? Math.floor(requested) : 1
+  const listHref = listPage > 1 ? `/dashboard/customers?page=${listPage}` : "/dashboard/customers"
   if (!/^[A-Za-z0-9_-]{8,80}$/.test(id)) notFound()
 
   const visitor = listVisitorRollups().find((row) => row.id === id)
@@ -25,7 +34,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   if (!visitor || timeline.length === 0) {
     return (
       <div className="space-y-4">
-        <Link href="/dashboard/customers" className="text-sm text-muted-foreground hover:underline">
+        <Link href={listHref} className="text-sm text-muted-foreground hover:underline">
           방문자 목록
         </Link>
         <p className="rounded-2xl border border-dashed border-border px-6 py-16 text-center text-sm text-muted-foreground">
@@ -44,7 +53,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Link href="/dashboard/customers" className="text-sm text-muted-foreground hover:underline">
+        <Link href={listHref} className="text-sm text-muted-foreground hover:underline">
           방문자 목록
         </Link>
         <h2 className="font-serif text-2xl">방문자 여정</h2>
@@ -82,7 +91,10 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         <Item label="후기" value={visitor.reviewClick ? "예" : "아니오"} />
       </dl>
 
-      <div className="overflow-x-auto">
+      <div className="space-y-3">
+        <h3 className="font-serif text-xl">행동 시각</h3>
+        <p className="text-sm text-muted-foreground">이 방문자가 한 행동을 시간순으로 보여 줍니다.</p>
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -101,6 +113,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             ))}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   )

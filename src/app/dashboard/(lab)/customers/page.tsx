@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { buttonVariants } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -10,16 +11,28 @@ import {
 import { customerFacingTinName } from "@/lib/bundles"
 import { listProducts } from "@/lib/catalog"
 import { formatDuration, formatWhen, shortVisitorCode, won } from "@/lib/format"
-import { confirmedBuys, linkNames, listVisitorRollups, sourceLabel, visitorVisitAndBuyTimes, type BuyClickStamp, type VisitStamp } from "@/lib/journey"
+import { confirmedBuys, linkNames, listVisitorRollups, sourceLabel, visitorVisitAndBuyTimes } from "@/lib/journey"
 import { referrerLabel } from "@/lib/referrer"
+import { cn } from "@/lib/utils"
 
 export const metadata = { title: "방문자" }
 
-export default function CustomersPage() {
+const PAGE_SIZE = 30
+
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
+  const requested = Number((await searchParams).page)
   const names = linkNames()
   const rows = listVisitorRollups()
   const products = listProducts(true)
   const moments = new Map(visitorVisitAndBuyTimes().map((item) => [item.visitorId, item]))
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
+  const page = Number.isFinite(requested) && requested >= 1 ? Math.min(Math.floor(requested), pageCount) : 1
+  const start = (page - 1) * PAGE_SIZE
+  const visible = rows.slice(start, start + PAGE_SIZE)
   const buys = new Map<string, string[]>()
   for (const buy of confirmedBuys()) {
     const product = products.find((item) => item.id === buy.product_id)
@@ -37,7 +50,7 @@ export default function CustomersPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           브라우저에 남긴 방문자 번호만 보여 줍니다. 이름과 전화번호는 저장하지 않습니다. 미리보기 방문은 빠집니다.
           구매 확정 금액은 고른 옵션의 실판매가에 수량을 곱한 합입니다. 결제 금액은 결제 버튼을 누른 합입니다.
-          들어온 시각은 방문이 기록된 때이고, 구매 확정 시각은 구매를 확정한 때입니다.
+          이 목록은 요약입니다. 세부를 누르면 들어온 시각, 구매 확정 시각, 각 행동을 볼 수 있습니다.
         </p>
       </div>
 
@@ -46,16 +59,17 @@ export default function CustomersPage() {
           아직 방문자가 없습니다.
         </p>
       ) : (
+        <>
+        <Pager page={page} pageCount={pageCount} from={start + 1} to={start + visible.length} total={rows.length} />
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>방문자</TableHead>
+                <TableHead>세부</TableHead>
                 <TableHead>첫 출처</TableHead>
                 <TableHead>처음</TableHead>
                 <TableHead>마지막</TableHead>
-                <TableHead>들어온 시각</TableHead>
-                <TableHead>구매 확정 시각</TableHead>
                 <TableHead className="text-right">체류</TableHead>
                 <TableHead>다시 방문</TableHead>
                 <TableHead className="text-right">첫 구매하기</TableHead>
@@ -70,7 +84,7 @@ export default function CustomersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((row) => {
+              {visible.map((row) => {
                 const stamp = moments.get(row.id)
                 const visits = stamp?.visits ?? []
                 const buyClicks = stamp?.buyClicks ?? []
@@ -93,8 +107,13 @@ export default function CustomersPage() {
                     data-buy-times={buyClicks.map((buy) => buy.createdAt).join(",")}
                   >
                     <TableCell className="font-mono text-xs">
-                      <Link href={`/dashboard/customers/${row.id}`} className="underline-offset-2 hover:underline">
+                      <Link href={detailHref(row.id, page)} className="underline-offset-2 hover:underline">
                         {shortVisitorCode(row.id)}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link href={detailHref(row.id, page)} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                        세부
                       </Link>
                     </TableCell>
                     <TableCell>
@@ -104,8 +123,6 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{formatWhen(row.firstSeen)}</TableCell>
                     <TableCell className="whitespace-nowrap">{formatWhen(row.lastSeen)}</TableCell>
-                    <TableCell>{visitLines(visits)}</TableCell>
-                    <TableCell>{buyLines(buyClicks, products)}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       {row.dwellSeconds > 0 ? formatDuration(row.dwellSeconds) : "없음"}
                     </TableCell>
@@ -125,37 +142,51 @@ export default function CustomersPage() {
             </TableBody>
           </Table>
         </div>
+        <Pager page={page} pageCount={pageCount} from={start + 1} to={start + visible.length} total={rows.length} />
+        </>
       )}
     </div>
   )
 }
 
-function visitLines(visits: VisitStamp[]) {
-  if (visits.length === 0) return "—"
-  return visits.map((visit, index) => (
-    <span key={`${visit.createdAt}-${index}`} className="block whitespace-nowrap text-xs">
-      {formatWhen(visit.createdAt)}
-      {visit.path ? <span className="text-muted-foreground"> {visit.path}</span> : null}
-    </span>
-  ))
+function detailHref(id: string, page: number) {
+  return page > 1 ? `/dashboard/customers/${id}?page=${page}` : `/dashboard/customers/${id}`
 }
 
-function buyLines(buys: BuyClickStamp[], products: ReturnType<typeof listProducts>) {
-  if (buys.length === 0) return "—"
-  return buys.map((buy, index) => {
-    const note = buyOptionNote(buy, products)
-    return (
-      <span key={`${buy.createdAt}-${index}`} className="block whitespace-nowrap text-xs">
-        {formatWhen(buy.createdAt)}
-        {note ? <> {note}</> : null}
-      </span>
-    )
-  })
-}
-
-function buyOptionNote(buy: BuyClickStamp, products: ReturnType<typeof listProducts>) {
-  const product = buy.productId ? products.find((item) => item.id === buy.productId) : undefined
-  const name = product ? customerFacingTinName(product.name, product.slug) : buy.productId || ""
-  const count = buy.qty == null ? "" : `${buy.qty}개`
-  return [name, count].filter(Boolean).join(" ")
+function Pager({
+  page,
+  pageCount,
+  from,
+  to,
+  total,
+}: {
+  page: number
+  pageCount: number
+  from: number
+  to: number
+  total: number
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+      <p className="text-muted-foreground tabular-nums" data-page={page} data-page-count={pageCount}>
+        {from}–{to} / {total}
+      </p>
+      <div className="flex gap-2">
+        {page > 1 ? (
+          <Link href={page === 2 ? "/dashboard/customers" : `/dashboard/customers?page=${page - 1}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            이전
+          </Link>
+        ) : (
+          <span className={cn(buttonVariants({ variant: "outline", size: "sm" }), "pointer-events-none opacity-50")}>이전</span>
+        )}
+        {page < pageCount ? (
+          <Link href={`/dashboard/customers?page=${page + 1}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            다음
+          </Link>
+        ) : (
+          <span className={cn(buttonVariants({ variant: "outline", size: "sm" }), "pointer-events-none opacity-50")}>다음</span>
+        )}
+      </div>
+    </div>
+  )
 }
