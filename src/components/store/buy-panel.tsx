@@ -604,14 +604,26 @@ function BuySheet() {
     price,
     compareAt,
   })
-  const totalQty = lines.reduce((sum, line) => sum + line.qty, 0)
-  const total = lines.reduce((sum, line) => sum + line.price * line.qty, 0)
+  const directBuy = lines.length === 0 && choice ? [choice] : []
+  const purchaseLines = lines.length > 0 ? lines : directBuy
+  const totalQty = purchaseLines.reduce((sum, line) => sum + line.qty, 0)
+  const total = purchaseLines.reduce((sum, line) => sum + line.price * line.qty, 0)
   const compareTotal =
-    lines.length > 0 && lines.every((line) => line.compareAt != null)
-      ? lines.reduce((sum, line) => sum + (line.compareAt ?? 0) * line.qty, 0)
+    purchaseLines.length > 0 && purchaseLines.every((line) => line.compareAt != null)
+      ? purchaseLines.reduce((sum, line) => sum + (line.compareAt ?? 0) * line.qty, 0)
       : null
   const projectHref =
-    lines.length > 0 ? `/project?items=${itemsQuery(lines.map((line) => ({ slug: line.slug, qty: line.qty })))}` : ""
+    purchaseLines.length > 0
+      ? `/project?items=${itemsQuery(purchaseLines.map((line) => ({ slug: line.slug, qty: line.qty })))}`
+      : ""
+
+  function buyNow() {
+    if (purchaseLines.length === 0) return
+    if (directBuy.length === 1) {
+      writeStackToCart(directBuy, managedSlugs(configurations, selectedSlug))
+    }
+    for (const line of purchaseLines) remember("buy_click", line.slug, line.qty)
+  }
 
   useEffect(() => {
     if (!sheetOpen) return
@@ -809,22 +821,21 @@ function BuySheet() {
             {projectHref ? (
               <a
                 href={projectHref}
-                data-cart-buy="project"
+                data-cart-buy={directBuy.length === 1 ? "direct" : "project"}
+                data-buy-slug={purchaseLines.map((line) => line.slug).join(",")}
                 className={cn(buttonVariants(), brandNavyFill, "h-12 min-w-0 px-2 text-sm")}
-                onClick={() => {
-                  for (const line of lines) remember("buy_click", line.slug, line.qty)
-                }}
+                onClick={buyNow}
               >
-                구매하기
+                바로 구매하기
               </a>
             ) : (
               <button
                 type="button"
-                data-cart-buy="project"
+                data-cart-buy="direct"
                 className={cn(buttonVariants(), brandNavyFill, "h-12 min-w-0 px-2 text-sm")}
                 disabled
               >
-                구매하기
+                바로 구매하기
               </button>
             )}
           </div>
