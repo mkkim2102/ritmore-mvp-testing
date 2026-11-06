@@ -8,7 +8,7 @@ import { ReviewPages } from "@/components/store/review-pages"
 import { ReviewTracker } from "@/components/store/review-tracker"
 import { Tracker } from "@/components/store/tracker"
 import { isTinFamily, type TinChoice } from "@/lib/bundles"
-import { communityDate, communityKey, listInquiries, listReviews } from "@/lib/community"
+import { communityDate, communityKey, listInquiries } from "@/lib/community"
 import { detailSlidesFor } from "@/lib/product-slides"
 import { TIN_DETAIL_PAGES } from "@/lib/detail-images"
 import { landingFor } from "@/lib/landing"
@@ -43,24 +43,7 @@ export function ProductDetail({
 }) {
   const landing = landingFor(product)
   const sharedCopy = isTinFamily(product.slug)
-  const storedReviews = listReviews(communityKey(product.slug))
   const inquiries = listInquiries(communityKey(product.slug))
-  const reviewCount = storedReviews.length
-  const sampleReviewCount = landing.reviews.length
-  const displayedReviewCount = reviewCount + sampleReviewCount
-  const reviewScores = storedReviews.map((review) => review.score).filter((score) => Number.isFinite(score))
-  const reviewScore = reviewScores.length
-    ? (reviewScores.reduce((sum, score) => sum + score, 0) / reviewScores.length).toFixed(1)
-    : null
-  const visitorCards = storedReviews.map((review) => ({
-    key: review.id,
-    id: review.id,
-    source: "visitor" as const,
-    name: review.name || "익명",
-    score: review.score.toFixed(1),
-    date: communityDate(review.createdAt),
-    body: review.body,
-  }))
   const sampleCards = landing.reviews.map((review, reviewIndex) => ({
     key: `${review.name}-${review.date}-${reviewIndex}`,
     source: "sample" as const,
@@ -69,7 +52,8 @@ export function ProductDetail({
     date: review.date,
     body: review.body,
   }))
-  const previewReviews = (reviewCount > 0 ? visitorCards : sampleCards).slice(0, 3)
+  const reviewCount = sampleCards.length
+  const previewReviews = sampleCards.slice(0, 3)
 
   return (
     <ProductBuyProvider
@@ -185,18 +169,13 @@ export function ProductDetail({
         <div className="mx-auto max-w-6xl px-4 py-14 lg:max-w-none lg:px-0">
           <div className="flex items-end justify-between gap-4">
             <h2 className="font-serif text-3xl">후기</h2>
-            <p className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted-foreground">
-              {reviewScore ? <StarRow score={reviewScore} /> : null}
-              <span>후기 {displayedReviewCount}개{reviewScore ? ` · 방문자 평점 ${reviewScore} / 5` : ""}</span>
-            </p>
+            <p className="text-sm text-muted-foreground">후기 {reviewCount}개</p>
           </div>
-          {reviewCount > 0 ? <ReviewPages reviews={visitorCards} /> : null}
-          {sampleReviewCount > 0 ? <ReviewPages reviews={sampleCards} /> : null}
-          {displayedReviewCount === 0 ? (
+          {reviewCount > 0 ? <ReviewPages reviews={sampleCards} /> : (
             <p className="mt-8 text-sm leading-6 text-muted-foreground" data-review-empty>
               후기를 남길 수 있습니다.
             </p>
-          ) : null}
+          )}
           <ReviewForm slug={product.slug} />
         </div>
       </section>

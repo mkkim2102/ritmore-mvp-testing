@@ -34,6 +34,7 @@ export function ReviewForm({ slug }: { slug: string }) {
     >
       <input type="hidden" name="slug" value={slug} />
       <h3 className="font-medium">후기 남기기</h3>
+      <p className="text-sm text-muted-foreground">작성한 후기는 상품 페이지에 공개되지 않습니다.</p>
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">
           별점 <span className="font-normal text-muted-foreground">필수, 1에서 5</span>
