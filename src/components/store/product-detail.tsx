@@ -47,6 +47,7 @@ export function ProductDetail({
   const inquiries = listInquiries(communityKey(product.slug))
   const reviewCount = storedReviews.length
   const sampleReviewCount = landing.reviews.length
+  const displayedReviewCount = reviewCount + sampleReviewCount
   const reviewScores = storedReviews.map((review) => review.score).filter((score) => Number.isFinite(score))
   const reviewScore = reviewScores.length
     ? (reviewScores.reduce((sum, score) => sum + score, 0) / reviewScores.length).toFixed(1)
@@ -121,20 +122,17 @@ export function ProductDetail({
           <div className="mx-auto mt-6 max-w-6xl space-y-6 px-4 lg:mt-8 lg:max-w-none lg:px-0">
             <div className="space-y-3 border-t border-border pt-4" data-review-preview>
               {previewReviews.length > 0 ? (
-                <>
-                  {reviewCount === 0 ? <p className="text-xs text-muted-foreground">테스트 데이터</p> : null}
-                  <ul className="space-y-3">
-                    {previewReviews.map((review) => (
-                      <li key={review.key} className="text-sm">
-                        <p className="flex items-center gap-2">
-                          <span className="font-medium">{review.name}</span>
-                          <StarRow score={review.score} />
-                        </p>
-                        <p className="mt-1 text-muted-foreground">{review.body}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </>
+                <ul className="space-y-3">
+                  {previewReviews.map((review) => (
+                    <li key={review.key} className="text-sm">
+                      <p className="flex items-center gap-2">
+                        <span className="font-medium">{review.name}</span>
+                        <StarRow score={review.score} />
+                      </p>
+                      <p className="mt-1 text-muted-foreground">{review.body}</p>
+                    </li>
+                  ))}
+                </ul>
               ) : (
                 <p className="text-sm text-muted-foreground">후기를 남길 수 있습니다.</p>
               )}
@@ -189,17 +187,12 @@ export function ProductDetail({
             <h2 className="font-serif text-3xl">후기</h2>
             <p className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted-foreground">
               {reviewScore ? <StarRow score={reviewScore} /> : null}
-              <span>방문자 후기 {reviewCount}개{reviewScore ? ` · 평점 ${reviewScore} / 5` : ""}</span>
+              <span>후기 {displayedReviewCount}개{reviewScore ? ` · 방문자 평점 ${reviewScore} / 5` : ""}</span>
             </p>
           </div>
           {reviewCount > 0 ? <ReviewPages reviews={visitorCards} /> : null}
-          {sampleReviewCount > 0 ? (
-            <div className="mt-8">
-              <h3 className="text-sm font-medium text-muted-foreground">테스트 데이터 {sampleReviewCount}개</h3>
-              <ReviewPages reviews={sampleCards} />
-            </div>
-          ) : null}
-          {reviewCount === 0 && sampleReviewCount === 0 ? (
+          {sampleReviewCount > 0 ? <ReviewPages reviews={sampleCards} /> : null}
+          {displayedReviewCount === 0 ? (
             <p className="mt-8 text-sm leading-6 text-muted-foreground" data-review-empty>
               후기를 남길 수 있습니다.
             </p>
