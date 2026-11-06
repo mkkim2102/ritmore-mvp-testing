@@ -68,7 +68,10 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         <Item label="후기" value={visitor.reviewClick ? "예" : "아니오"} />
       </dl>
 
-      <div className="overflow-x-auto">
+      <div className="space-y-3">
+        <h3 className="font-serif text-xl">행동 시각</h3>
+        <p className="text-sm text-muted-foreground">들어온 시각부터 구매 확정까지, 기록된 행동을 시간순으로 보여 줍니다.</p>
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -79,7 +82,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
           </TableHeader>
           <TableBody>
             {timeline.map((item) => (
-              <TableRow key={item.id} data-timeline-step={item.step} data-amount={item.amount ?? ""}>
+              <TableRow key={item.id} data-timeline-step={item.step} data-action-at={item.createdAt} data-amount={item.amount ?? ""}>
                 <TableCell className="whitespace-nowrap">{formatWhen(item.createdAt)}</TableCell>
                 <TableCell>{item.label}</TableCell>
                 <TableCell>{item.detail || "—"}</TableCell>
@@ -87,6 +90,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             ))}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   )

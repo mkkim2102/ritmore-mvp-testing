@@ -10,7 +10,7 @@ import {
 import { customerFacingTinName } from "@/lib/bundles"
 import { listProducts } from "@/lib/catalog"
 import { formatDuration, formatWhen, shortVisitorCode, won } from "@/lib/format"
-import { confirmedBuys, linkNames, listVisitorRollups, sourceLabel } from "@/lib/journey"
+import { confirmedBuys, linkNames, listActionTimes, listVisitorRollups, sourceLabel } from "@/lib/journey"
 import { referrerLabel } from "@/lib/referrer"
 
 export const metadata = { title: "방문자" }
@@ -19,6 +19,12 @@ export default function CustomersPage() {
   const names = linkNames()
   const rows = listVisitorRollups()
   const products = listProducts(true)
+  const actions = new Map<string, ReturnType<typeof listActionTimes>>()
+  for (const action of listActionTimes()) {
+    const list = actions.get(action.visitorId) ?? []
+    list.push(action)
+    actions.set(action.visitorId, list)
+  }
   const buys = new Map<string, string[]>()
   for (const buy of confirmedBuys()) {
     const product = products.find((item) => item.id === buy.product_id)
@@ -36,6 +42,7 @@ export default function CustomersPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           브라우저에 남긴 방문자 번호만 보여 줍니다. 이름과 전화번호는 저장하지 않습니다. 미리보기 방문은 빠집니다.
           구매 확정 금액은 고른 옵션의 실판매가에 수량을 곱한 합입니다. 결제 금액은 결제 버튼을 누른 합입니다.
+          행동 시각은 그 방문자가 한 행동을 오래된 것부터 보여 줍니다.
         </p>
       </div>
 
@@ -52,6 +59,7 @@ export default function CustomersPage() {
                 <TableHead>첫 출처</TableHead>
                 <TableHead>처음</TableHead>
                 <TableHead>마지막</TableHead>
+                <TableHead>행동 시각</TableHead>
                 <TableHead className="text-right">체류</TableHead>
                 <TableHead>다시 방문</TableHead>
                 <TableHead className="text-right">첫 구매하기</TableHead>
@@ -81,6 +89,7 @@ export default function CustomersPage() {
                   data-qty={row.lastQty ?? ""}
                   data-returned={row.returned ? "yes" : "no"}
                   data-dwell={row.dwellSeconds}
+                  data-actions={(actions.get(row.id) ?? []).map((action) => `${action.createdAt}|${action.step}`).join(",")}
                 >
                   <TableCell className="font-mono text-xs">
                     <Link href={`/dashboard/customers/${row.id}`} className="underline-offset-2 hover:underline">
@@ -94,6 +103,20 @@ export default function CustomersPage() {
                   </TableCell>
                   <TableCell className="whitespace-nowrap">{formatWhen(row.firstSeen)}</TableCell>
                   <TableCell className="whitespace-nowrap">{formatWhen(row.lastSeen)}</TableCell>
+                  <TableCell className="text-xs">
+                    {(actions.get(row.id) ?? []).length === 0 ? (
+                      "—"
+                    ) : (
+                      <span className="block space-y-1">
+                        {(actions.get(row.id) ?? []).map((action) => (
+                          <span key={action.id} className="block whitespace-nowrap" data-action-step={action.step}>
+                            {formatWhen(action.createdAt)} {action.label}
+                            {action.note ? <span className="text-muted-foreground"> {action.note}</span> : null}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
                     {row.dwellSeconds > 0 ? formatDuration(row.dwellSeconds) : "없음"}
                   </TableCell>
