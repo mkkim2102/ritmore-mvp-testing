@@ -450,23 +450,82 @@ type TimelineRow = {
   meta: string | null
 }
 
-export function visitorTimeline(visitorId: string) {
-  const rows = all<TimelineRow>(
-    `SELECT id, created_at, step, path, link_code, channel, source, medium, campaign, content,
-            referrer, referrer_class, product_id, price, qty, meta
-     FROM events
-     WHERE visitor_id = ? AND preview = 0
-     ORDER BY created_at ASC, id ASC`,
-    [visitorId],
-  )
+export type JourneyRow = {
+  id: string
+  visitorId: string
+  createdAt: string
+  step: string
+  label: string
+  detail: string
+  path: string
+  productId: string | null
+  qty: number | null
+  price: number | null
+  amount: number | null
+  linkCode: string
+  linkLabel: string
+  referrerClass: string
+}
+
+const JOURNEY_CHUNK = 400
+
+export function listJourneyRows(visitorIds: readonly string[]) {
+  const ids = [...new Set(visitorIds.filter((id) => id))]
+  if (ids.length === 0) return []
   const names = linkNames()
-  return rows.map((row): TimelineItem => ({
+  const found: JourneyRow[] = []
+  for (let index = 0; index < ids.length; index += JOURNEY_CHUNK) {
+    const slice = ids.slice(index, index + JOURNEY_CHUNK)
+    const marks = slice.map(() => "?").join(", ")
+    const rows = all<TimelineRow & { visitor_id: string }>(
+      `SELECT id, visitor_id, created_at, step, path, link_code, channel, source, medium, campaign, content,
+              referrer, referrer_class, product_id, price, qty, meta
+       FROM events
+       WHERE preview = 0 AND visitor_id IN (${marks})
+       ORDER BY created_at ASC, id ASC`,
+      slice,
+    )
+    for (const row of rows) found.push(toJourneyRow(row, names))
+  }
+  found.sort(compareJourney)
+  return found
+}
+
+function compareJourney(a: JourneyRow, b: JourneyRow) {
+  if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? -1 : 1
+  if (a.id !== b.id) return a.id < b.id ? -1 : 1
+  return 0
+}
+
+function toJourneyRow(row: TimelineRow & { visitor_id: string }, names: Map<string, string>): JourneyRow {
+  const qty = row.qty == null ? null : Number(row.qty)
+  const price = row.price == null ? null : Number(row.price)
+  return {
     id: row.id,
+    visitorId: row.visitor_id,
     createdAt: row.created_at,
     step: row.step,
     label: STEP_LABEL[row.step as Step] || row.step,
     detail: timelineDetail(row, names),
-    amount: eventPurchaseAmount(row.step, row.price, row.qty),
+    path: row.path || "",
+    productId: row.product_id || null,
+    qty,
+    price,
+    amount: eventPurchaseAmount(row.step, price, qty),
+    linkCode: row.link_code || "",
+    linkLabel: row.link_code ? names.get(row.link_code) || row.link_code : "",
+    referrerClass: row.referrer_class || "",
+  }
+}
+
+export function visitorTimeline(visitorId: string) {
+  return listJourneyRows([visitorId]).map((row): TimelineItem => ({
+    id: row.id,
+    createdAt: row.createdAt,
+    step: row.step,
+    label: row.label,
+    detail: row.detail,
+    amount: row.amount,
   }))
 }
 

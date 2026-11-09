@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/table"
 import { customerFacingTinName, tinCountForSlug } from "@/lib/bundles"
 import { listProducts } from "@/lib/catalog"
+import { CUSTOMER_ACTION_FILTERS, filterCustomerRollups, indexConfirmedBuys } from "@/lib/customer-filters"
 import { formatDuration, formatWhen, shortVisitorCode, won } from "@/lib/format"
-import { STEP_LABEL } from "@/lib/funnel"
 import { confirmedBuys, linkNames, listVisitorRollups, sourceLabel, type VisitorRollup } from "@/lib/journey"
 import { referrerLabel } from "@/lib/referrer"
 import { cn } from "@/lib/utils"
@@ -21,23 +21,6 @@ export const metadata = { title: "방문자" }
 const PAGE_SIZE = 30
 
 type CustomerSearch = Record<string, string | string[] | undefined>
-
-const ACTION_FILTERS: {
-  id: string
-  label: string
-  match: (row: VisitorRollup) => boolean
-}[] = [
-  { id: "visit", label: STEP_LABEL.visit, match: (row) => row.visited },
-  { id: "product_view", label: STEP_LABEL.product_view, match: (row) => row.productView },
-  { id: "buy_open", label: STEP_LABEL.buy_open, match: (row) => row.buyOpens > 0 },
-  { id: "add_to_cart", label: STEP_LABEL.add_to_cart, match: (row) => row.addedCart },
-  { id: "cart_view", label: STEP_LABEL.cart_view, match: (row) => row.viewedCart },
-  { id: "buy_click", label: STEP_LABEL.buy_click, match: (row) => row.buyClicks > 0 },
-  { id: "checkout_view", label: STEP_LABEL.checkout_view, match: (row) => row.checkoutView },
-  { id: "pay_click", label: STEP_LABEL.pay_click, match: (row) => row.payClick },
-  { id: "review_click", label: STEP_LABEL.review_click, match: (row) => row.reviewClick },
-  { id: "return", label: STEP_LABEL.return, match: (row) => row.returned },
-]
 
 export default async function CustomersPage({
   searchParams,
@@ -51,31 +34,19 @@ export default async function CustomersPage({
   const actionId = firstQuery(query.action)
   const optionId = firstQuery(query.option)
   const routeId = firstQuery(query.route)
-  const action = ACTION_FILTERS.find((item) => item.id === actionId) ?? null
-  const buys = new Map<string, string[]>()
-  const buyersByProduct = new Map<string, Set<string>>()
-  for (const buy of confirmedBuys()) {
-    const product = products.find((item) => item.id === buy.product_id)
-    const label = product ? customerFacingTinName(product.name, product.slug) : buy.product_id
-    const line = `${label} ${buy.qty}개 ${won(buy.amount)}`
-    const list = buys.get(buy.visitor_id) ?? []
-    list.push(line)
-    buys.set(buy.visitor_id, list)
-    const buyers = buyersByProduct.get(buy.product_id) ?? new Set<string>()
-    buyers.add(buy.visitor_id)
-    buyersByProduct.set(buy.product_id, buyers)
-  }
+  const action = CUSTOMER_ACTION_FILTERS.find((item) => item.id === actionId) ?? null
+  const indexed = indexConfirmedBuys(confirmedBuys(), (productId) => {
+    const product = products.find((item) => item.id === productId)
+    return product ? customerFacingTinName(product.name, product.slug) : productId
+  })
+  const buys = indexed.lines
+  const buyersByProduct = indexed.buyersByProduct
   const options = optionChoices(buyersByProduct, products, optionId)
   const selectedOption = optionId ? options.find((item) => item.id === optionId) ?? null : null
   const routes = routeChoices(rows, names)
   const selectedRoute = routeId ? routes.find((item) => item.id === routeId) ?? null : null
   const routeLabel = routeId ? (selectedRoute?.label ?? labelForRoute(routeId, names)) : null
-  const filtered = rows.filter((row) => {
-    if (action && !action.match(row)) return false
-    if (optionId && !buyersByProduct.get(optionId)?.has(row.id)) return false
-    if (routeId && row.sourceKey !== routeId) return false
-    return true
-  })
+  const filtered = filterCustomerRollups(rows, { action: actionId, option: optionId, route: routeId }, buyersByProduct)
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const page = clampPage(query.page, pageCount)
   const start = (page - 1) * PAGE_SIZE
@@ -108,6 +79,7 @@ export default async function CustomersPage({
         options={options}
         routes={routes}
         scope={scope}
+        exportHref={customerExportHref(linkQuery)}
       />
 
       {rows.length === 0 ? (
@@ -169,9 +141,19 @@ export default async function CustomersPage({
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Link href={href} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-                        세부 보기
-                      </Link>
+                      <div className="flex flex-wrap gap-2">
+                        <Link href={href} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-auto whitespace-normal")}>
+                          세부 보기
+                        </Link>
+                        <a
+                          href={`/dashboard/customers/${row.id}/export`}
+                          download
+                          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-auto max-w-full whitespace-normal")}
+                          aria-label={`${code} 개별 엑셀`}
+                        >
+                          개별 엑셀
+                        </a>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {sourceLabel(row.sourceKey, names)}
@@ -218,6 +200,7 @@ function VisitorFilters({
   options,
   routes,
   scope,
+  exportHref,
 }: {
   query: CustomerSearch
   actionId: string | null
@@ -226,6 +209,7 @@ function VisitorFilters({
   options: OptionChoice[]
   routes: RouteChoice[]
   scope: string
+  exportHref: string
 }) {
   return (
     <div className="space-y-3">
@@ -235,7 +219,7 @@ function VisitorFilters({
           <FilterLink href={filterHref(query, { action: null, option: optionId, route: routeId })} active={!actionId}>
             전체
           </FilterLink>
-          {ACTION_FILTERS.map((item) => (
+          {CUSTOMER_ACTION_FILTERS.map((item) => (
             <FilterLink
               key={item.id}
               href={filterHref(query, { action: item.id, option: optionId, route: routeId })}
@@ -290,6 +274,17 @@ function VisitorFilters({
       >
         {scope}
       </p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <a
+          href={exportHref}
+          download
+          aria-label="지금 고른 조건의 방문자 여정 엑셀 받기"
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-auto max-w-full whitespace-normal")}
+        >
+          엑셀 받기
+        </a>
+        <p className="text-xs text-muted-foreground">지금 고른 조건에 맞는 방문자를 모두 받습니다. 이 화면의 30명만이 아닙니다.</p>
+      </div>
     </div>
   )
 }
@@ -467,6 +462,18 @@ function clampPage(raw: string | string[] | undefined, pageCount: number) {
   const parsed = Number(value)
   if (!Number.isFinite(parsed) || parsed < 1) return 1
   return Math.min(Math.floor(parsed), pageCount)
+}
+
+function customerExportHref(current: CustomerSearch) {
+  const params = new URLSearchParams()
+  const action = firstQuery(current.action)
+  const option = firstQuery(current.option)
+  const route = firstQuery(current.route)
+  if (action) params.set("action", action)
+  if (option) params.set("option", option)
+  if (route) params.set("route", route)
+  const search = params.toString()
+  return search ? `/dashboard/customers/export?${search}` : "/dashboard/customers/export"
 }
 
 function customerHref(path: string, page: number, current: CustomerSearch) {

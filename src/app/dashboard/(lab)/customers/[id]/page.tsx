@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { buttonVariants } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -13,6 +14,7 @@ import { listProducts } from "@/lib/catalog"
 import { formatDuration, formatWhen, shortVisitorCode, won } from "@/lib/format"
 import { linkNames, listVisitorRollups, sourceLabel, visitorTimeline, visitorVisitAndBuyTimes, type BuyClickStamp, type VisitStamp } from "@/lib/journey"
 import { referrerLabel } from "@/lib/referrer"
+import { cn } from "@/lib/utils"
 
 export const metadata = { title: "방문자 여정" }
 
@@ -55,7 +57,16 @@ export default async function CustomerDetailPage({
         <Link href={listHref} className="text-sm text-muted-foreground hover:underline">
           방문자 목록
         </Link>
-        <h2 className="font-serif text-2xl">방문자 세부</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="font-serif text-2xl">방문자 세부</h2>
+          <a
+            href={`/dashboard/customers/${visitor.id}/export`}
+            download
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-auto max-w-full whitespace-normal")}
+          >
+            엑셀 받기
+          </a>
+        </div>
         <p className="font-mono text-xs" data-visitor={visitor.id}>
           {shortVisitorCode(visitor.id)}
         </p>
