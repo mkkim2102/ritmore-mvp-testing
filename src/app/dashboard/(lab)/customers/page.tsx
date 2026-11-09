@@ -50,6 +50,7 @@ export default async function CustomersPage({
   const products = listProducts(true)
   const actionId = firstQuery(query.action)
   const optionId = firstQuery(query.option)
+  const routeId = firstQuery(query.route)
   const action = ACTION_FILTERS.find((item) => item.id === actionId) ?? null
   const buys = new Map<string, string[]>()
   const buyersByProduct = new Map<string, Set<string>>()
@@ -66,17 +67,26 @@ export default async function CustomersPage({
   }
   const options = optionChoices(buyersByProduct, products, optionId)
   const selectedOption = optionId ? options.find((item) => item.id === optionId) ?? null : null
+  const routes = routeChoices(rows, names)
+  const selectedRoute = routeId ? routes.find((item) => item.id === routeId) ?? null : null
+  const routeLabel = routeId ? (selectedRoute?.label ?? labelForRoute(routeId, names)) : null
   const filtered = rows.filter((row) => {
     if (action && !action.match(row)) return false
     if (optionId && !buyersByProduct.get(optionId)?.has(row.id)) return false
+    if (routeId && row.sourceKey !== routeId) return false
     return true
   })
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const page = clampPage(query.page, pageCount)
   const start = (page - 1) * PAGE_SIZE
   const visible = filtered.slice(start, start + PAGE_SIZE)
-  const scope = scopeSentence(action?.label ?? null, selectedOption?.label ?? (optionId || null))
-  const linkQuery: CustomerSearch = { ...query, action: action?.id, option: optionId || undefined }
+  const scope = scopeSentence(action?.label ?? null, selectedOption?.label ?? (optionId || null), routeLabel)
+  const linkQuery: CustomerSearch = {
+    ...query,
+    action: action?.id,
+    option: optionId || undefined,
+    route: routeId || undefined,
+  }
 
   return (
     <div className="space-y-6">
@@ -90,7 +100,15 @@ export default async function CustomersPage({
         </p>
       </div>
 
-      <VisitorFilters query={linkQuery} actionId={action?.id ?? null} optionId={selectedOption?.id ?? null} options={options} scope={scope} />
+      <VisitorFilters
+        query={linkQuery}
+        actionId={action?.id ?? null}
+        optionId={selectedOption?.id ?? null}
+        routeId={routeId || null}
+        options={options}
+        routes={routes}
+        scope={scope}
+      />
 
       {rows.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border px-6 py-16 text-center text-sm text-muted-foreground">
@@ -98,7 +116,7 @@ export default async function CustomersPage({
         </p>
       ) : filtered.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border px-6 py-16 text-center text-sm text-muted-foreground" data-empty="filter">
-          {emptyFilterSentence(action?.label ?? null, selectedOption?.label ?? optionId)}
+          {emptyFilterSentence(action?.label ?? null, selectedOption?.label ?? optionId, routeLabel)}
         </p>
       ) : (
         <>
@@ -196,13 +214,17 @@ function VisitorFilters({
   query,
   actionId,
   optionId,
+  routeId,
   options,
+  routes,
   scope,
 }: {
   query: CustomerSearch
   actionId: string | null
   optionId: string | null
+  routeId: string | null
   options: OptionChoice[]
+  routes: RouteChoice[]
   scope: string
 }) {
   return (
@@ -210,13 +232,13 @@ function VisitorFilters({
       <div className="space-y-2">
         <p className="text-xs text-muted-foreground">행동</p>
         <div className="flex flex-wrap gap-2" role="navigation" aria-label="행동">
-          <FilterLink href={filterHref(query, { action: null, option: optionId })} active={!actionId}>
+          <FilterLink href={filterHref(query, { action: null, option: optionId, route: routeId })} active={!actionId}>
             전체
           </FilterLink>
           {ACTION_FILTERS.map((item) => (
             <FilterLink
               key={item.id}
-              href={filterHref(query, { action: item.id, option: optionId })}
+              href={filterHref(query, { action: item.id, option: optionId, route: routeId })}
               active={actionId === item.id}
             >
               {item.label}
@@ -228,13 +250,13 @@ function VisitorFilters({
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">확정한 옵션</p>
           <div className="flex flex-wrap gap-2" role="navigation" aria-label="확정한 옵션">
-            <FilterLink href={filterHref(query, { action: actionId, option: null })} active={!optionId}>
+            <FilterLink href={filterHref(query, { action: actionId, option: null, route: routeId })} active={!optionId}>
               전체
             </FilterLink>
             {options.map((item) => (
               <FilterLink
                 key={item.id}
-                href={filterHref(query, { action: actionId, option: item.id })}
+                href={filterHref(query, { action: actionId, option: item.id, route: routeId })}
                 active={optionId === item.id}
               >
                 {item.label}
@@ -243,7 +265,29 @@ function VisitorFilters({
           </div>
         </div>
       ) : null}
-      <p className="text-sm" data-active-filter={actionId || "all"} data-active-option={optionId || "all"}>
+      <div className="space-y-2">
+        <p className="text-xs text-muted-foreground">들어온 경로</p>
+        <div className="flex flex-wrap gap-2" role="navigation" aria-label="들어온 경로">
+          <FilterLink href={filterHref(query, { action: actionId, option: optionId, route: null })} active={!routeId}>
+            전체
+          </FilterLink>
+          {routes.map((item) => (
+            <FilterLink
+              key={item.id}
+              href={filterHref(query, { action: actionId, option: optionId, route: item.id })}
+              active={routeId === item.id}
+            >
+              {item.label}
+            </FilterLink>
+          ))}
+        </div>
+      </div>
+      <p
+        className="text-sm"
+        data-active-filter={actionId || "all"}
+        data-active-option={optionId || "all"}
+        data-active-route={routeId || "all"}
+      >
         {scope}
       </p>
     </div>
@@ -287,22 +331,57 @@ function optionChoices(
     .sort((a, b) => (a.count ?? 999) - (b.count ?? 999) || a.label.localeCompare(b.label, "ko"))
 }
 
-function scopeSentence(actionLabel: string | null, optionLabel: string | null) {
-  if (actionLabel && optionLabel) {
-    return `「${actionLabel}」 항목을 하고 확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고른 방문자만 보여 줍니다.`
+type RouteChoice = { id: string; label: string }
+
+function routeChoices(rows: VisitorRollup[], names: Map<string, string>): RouteChoice[] {
+  const ids = new Set<string>()
+  for (const row of rows) {
+    if (row.sourceKey) ids.add(row.sourceKey)
   }
-  if (actionLabel) return `「${actionLabel}」 항목을 한 방문자만 보여 줍니다.`
-  if (optionLabel) return `확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고른 방문자만 보여 줍니다.`
-  return "전체 방문자를 보여 줍니다."
+  return [...ids]
+    .map((id) => ({ id, label: sourceLabel(id, names) }))
+    .sort((a, b) => a.label.localeCompare(b.label, "ko") || a.id.localeCompare(b.id))
 }
 
-function emptyFilterSentence(actionLabel: string | null, optionLabel: string | null) {
-  if (actionLabel && optionLabel) {
-    return `「${actionLabel}」 항목을 하고 확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고른 방문자가 없습니다.`
+function labelForRoute(key: string, names: Map<string, string>) {
+  if (key.startsWith("link:") || key.startsWith("ref:")) return sourceLabel(key, names)
+  return key
+}
+
+function scopeSentence(actionLabel: string | null, optionLabel: string | null, routeLabel: string | null) {
+  if (!routeLabel) {
+    if (actionLabel && optionLabel) {
+      return `「${actionLabel}」 항목을 하고 확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고른 방문자만 보여 줍니다.`
+    }
+    if (actionLabel) return `「${actionLabel}」 항목을 한 방문자만 보여 줍니다.`
+    if (optionLabel) return `확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고른 방문자만 보여 줍니다.`
+    return "전체 방문자를 보여 줍니다."
   }
-  if (actionLabel) return `「${actionLabel}」 항목을 한 방문자가 없습니다.`
-  if (optionLabel) return `확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고른 방문자가 없습니다.`
-  return "조건에 맞는 방문자가 없습니다."
+  const via = `들어온 경로 「${routeLabel}」${euro(routeLabel)} 들어온`
+  if (actionLabel && optionLabel) {
+    return `「${actionLabel}」 항목을 하고 확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고르고 ${via} 방문자만 보여 줍니다.`
+  }
+  if (actionLabel) return `「${actionLabel}」 항목을 하고 ${via} 방문자만 보여 줍니다.`
+  if (optionLabel) return `확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고르고 ${via} 방문자만 보여 줍니다.`
+  return `${via} 방문자만 보여 줍니다.`
+}
+
+function emptyFilterSentence(actionLabel: string | null, optionLabel: string | null, routeLabel: string | null) {
+  if (!routeLabel) {
+    if (actionLabel && optionLabel) {
+      return `「${actionLabel}」 항목을 하고 확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고른 방문자가 없습니다.`
+    }
+    if (actionLabel) return `「${actionLabel}」 항목을 한 방문자가 없습니다.`
+    if (optionLabel) return `확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고른 방문자가 없습니다.`
+    return "조건에 맞는 방문자가 없습니다."
+  }
+  const via = `들어온 경로 「${routeLabel}」${euro(routeLabel)} 들어온`
+  if (actionLabel && optionLabel) {
+    return `「${actionLabel}」 항목을 하고 확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고르고 ${via} 방문자가 없습니다.`
+  }
+  if (actionLabel) return `「${actionLabel}」 항목을 하고 ${via} 방문자가 없습니다.`
+  if (optionLabel) return `확정한 옵션 「${optionLabel}」${eulReul(optionLabel)} 고르고 ${via} 방문자가 없습니다.`
+  return `${via} 방문자가 없습니다.`
 }
 
 function eulReul(word: string) {
@@ -311,8 +390,23 @@ function eulReul(word: string) {
   return (last - 0xac00) % 28 === 0 ? "를" : "을"
 }
 
-function filterHref(current: CustomerSearch, next: { action: string | null; option: string | null }) {
-  const query: CustomerSearch = { ...current, action: next.action || undefined, option: next.option || undefined }
+function euro(word: string) {
+  const last = word.charCodeAt(word.length - 1)
+  if (!Number.isFinite(last) || last < 0xac00 || last > 0xd7a3) return "로"
+  const jong = (last - 0xac00) % 28
+  return jong === 0 || jong === 8 ? "로" : "으로"
+}
+
+function filterHref(
+  current: CustomerSearch,
+  next: { action: string | null; option: string | null; route: string | null },
+) {
+  const query: CustomerSearch = {
+    ...current,
+    action: next.action || undefined,
+    option: next.option || undefined,
+    route: next.route || undefined,
+  }
   return customerHref("/dashboard/customers", 1, query)
 }
 
