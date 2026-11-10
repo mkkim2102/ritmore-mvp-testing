@@ -1,3 +1,4 @@
+import { buttonVariants } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -11,27 +12,21 @@ import { customerFacingTinName } from "@/lib/bundles"
 import { getProductBySlug } from "@/lib/catalog"
 import { shortVisitorCode, won } from "@/lib/format"
 import { referrerLabel } from "@/lib/referrer"
-import { listSurveys } from "@/lib/survey"
+import { listSurveys, surveyCharge, surveyProductName } from "@/lib/survey"
+import { cn } from "@/lib/utils"
 
 export const metadata = { title: "설문" }
 
 function surveyAmount(row: { product_slug: string | null; price: number | null; qty: number | null }) {
-  if (row.price == null || row.qty == null) return ""
-  const stacked = (row.product_slug ?? "").includes(",")
-  return won(stacked ? row.price : row.price * row.qty)
+  const amount = surveyCharge(row)
+  return amount == null ? "" : won(amount)
 }
 
 function surveyProduct(raw: string | null) {
-  if (!raw) return "—"
-  return raw
-    .split(",")
-    .map((part) => part.split(":")[0])
-    .filter(Boolean)
-    .map((slug) => {
-      const product = getProductBySlug(slug)
-      return product ? customerFacingTinName(product.name, product.slug) : slug
-    })
-    .join(", ")
+  return surveyProductName(raw, (slug) => {
+    const product = getProductBySlug(slug)
+    return product ? customerFacingTinName(product.name, product.slug) : null
+  })
 }
 
 function seoulStamp(iso: string) {
@@ -53,7 +48,16 @@ export default function SurveysPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-serif text-2xl">설문</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="font-serif text-2xl">설문</h2>
+          <a
+            href="/dashboard/surveys/export"
+            download
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-auto max-w-full whitespace-normal")}
+          >
+            엑셀 받기
+          </a>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           구매하기를 두 번 누른 뒤 받은 답입니다. 이름과 연락처는 없습니다.
         </p>

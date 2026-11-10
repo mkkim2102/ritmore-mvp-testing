@@ -72,3 +72,21 @@ export type SurveyRow = {
 export function listSurveys() {
   return all<SurveyRow>(`SELECT * FROM surveys ORDER BY created_at DESC LIMIT 200`)
 }
+
+/** 슬러그에 쉼표가 있으면 price는 이미 합계다. 아니면 단가여서 수량과 곱한다. */
+export function surveyCharge(row: { product_slug: string | null; price: number | null; qty: number | null }) {
+  if (row.price == null || row.qty == null) return null
+  const stacked = (row.product_slug ?? "").includes(",")
+  return stacked ? row.price : row.price * row.qty
+}
+
+/** 화면과 같은 상품 이름. 쉼표로 쌓인 슬러그도 각각 바꾼다. 없는 상품은 슬러그를 그대로 둔다. */
+export function surveyProductName(raw: string | null, nameForSlug: (slug: string) => string | null) {
+  if (!raw) return "—"
+  return raw
+    .split(",")
+    .map((part) => part.split(":")[0])
+    .filter(Boolean)
+    .map((slug) => nameForSlug(slug) || slug)
+    .join(", ")
+}
