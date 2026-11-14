@@ -9,12 +9,6 @@ export type TinBundleSpec = {
   category: string
 }
 
-export type TinFamilyItem = {
-  slug: string
-  count: number
-  entry: boolean
-}
-
 export type TinChoice = {
   slug: string
   name: string
@@ -32,16 +26,11 @@ function bundleCopy(count: number) {
   }
 }
 
-export const TIN_BUNDLE_SPECS: TinBundleSpec[] = [3, 6, 12].map((count) => ({
+export const TIN_BUNDLE_SPECS: TinBundleSpec[] = [3, 6].map((count) => ({
   slug: `sample-a-${count}`,
   count,
   ...bundleCopy(count),
 }))
-
-export const TIN_FAMILY: TinFamilyItem[] = [
-  { slug: TIN_ENTRY_SLUG, count: 1, entry: true },
-  ...TIN_BUNDLE_SPECS.map((item) => ({ slug: item.slug, count: item.count, entry: false })),
-]
 
 export const CUSTOMER_TIN_COUNTS = [1, 3, 6] as const
 
@@ -51,11 +40,6 @@ export const CUSTOMER_TIN_PRICES = {
   3: { list: 20700, sale: 11400 },
   6: { list: 41400, sale: 21900 },
 } as const
-
-export function customerTinPrices(count: number) {
-  if (count === 1 || count === 3 || count === 6) return CUSTOMER_TIN_PRICES[count]
-  return null
-}
 
 export function customerTinLabel(count: number) {
   return `${count}개`
@@ -73,7 +57,7 @@ export function packChoiceLabel(tinCount: number) {
   return `${customerTinLabel(tinCount)} (${tabletCountLabel(tinCount)})`
 }
 
-/** SQLite slugs stay sample-a / sample-a-3 / sample-a-6. These are the public detail paths. */
+/** The cart stores sample-a / sample-a-3 / sample-a-6. These are the public detail paths. */
 const PUBLIC_SLUG_BY_INTERNAL = {
   "sample-a": "buy1",
   "sample-a-3": "buy2",
@@ -86,21 +70,13 @@ const INTERNAL_SLUG_BY_PUBLIC: Record<string, string> = {
   buy3: "sample-a-6",
 }
 
-const LEGACY_STOREFRONT_PATHS: Record<string, string> = {
-  "/products/sample-a": "/products/buy1",
-  "/products/sample-a-3": "/products/buy2",
-  "/products/sample-a-6": "/products/buy3",
-  "/checkout": "/purchase",
-  "/checkout/done": "/purchase/done",
-}
-
 export function internalProductSlug(slug: string) {
-  return INTERNAL_SLUG_BY_PUBLIC[slug] ?? slug
+  return Object.hasOwn(INTERNAL_SLUG_BY_PUBLIC, slug) ? INTERNAL_SLUG_BY_PUBLIC[slug] : slug
 }
 
 export function publicProductSlug(slug: string) {
   const internal = internalProductSlug(slug)
-  if (internal in PUBLIC_SLUG_BY_INTERNAL) return PUBLIC_SLUG_BY_INTERNAL[internal as keyof typeof PUBLIC_SLUG_BY_INTERNAL]
+  if (Object.hasOwn(PUBLIC_SLUG_BY_INTERNAL, internal)) return PUBLIC_SLUG_BY_INTERNAL[internal as keyof typeof PUBLIC_SLUG_BY_INTERNAL]
   return slug
 }
 
@@ -108,31 +84,9 @@ export function productPath(slug: string) {
   return `/products/${publicProductSlug(slug)}`
 }
 
-export function isLegacyProductSlug(slug: string) {
-  return Object.prototype.hasOwnProperty.call(PUBLIC_SLUG_BY_INTERNAL, slug)
-}
-
-export function legacyStorefrontPath(pathname: string) {
-  return LEGACY_STOREFRONT_PATHS[pathname] ?? null
-}
-
-export function publicLandingPath(path: string) {
-  const hashAt = path.indexOf("#")
-  const hash = hashAt >= 0 ? path.slice(hashAt) : ""
-  const withoutHash = hashAt >= 0 ? path.slice(0, hashAt) : path
-  const queryAt = withoutHash.indexOf("?")
-  const pathname = queryAt >= 0 ? withoutHash.slice(0, queryAt) : withoutHash
-  const search = queryAt >= 0 ? withoutHash.slice(queryAt) : ""
-  return `${legacyStorefrontPath(pathname) ?? pathname}${search}${hash}`
-}
-
 export function tinCountForSlug(slug: string) {
   const key = internalProductSlug(slug)
   return CUSTOMER_TIN_COUNTS.find((count) => tinSlugForCount(count) === key) ?? null
-}
-
-export function bundleProductId(slug: string) {
-  return `prod_${slug.replaceAll("-", "_")}`
 }
 
 export function tinSlugForCount(count: number) {
@@ -149,24 +103,6 @@ export function isTinFamily(slug: string) {
   return key === TIN_ENTRY_SLUG || isTinBundle(key)
 }
 
-export function isCustomerTinSlug(slug: string) {
-  const key = internalProductSlug(slug)
-  return CUSTOMER_TIN_COUNTS.some((count) => tinSlugForCount(count) === key)
-}
-
-export function customerFacingTinName(name: string, slug: string) {
-  const key = internalProductSlug(slug)
-  const count = CUSTOMER_TIN_COUNTS.find((item) => tinSlugForCount(item) === key)
-  if (count == null) return name
-  return `${name.replace(/\s+\d+틴$/, "")} ${customerTinLabel(count)}`
-}
-
 export function shelfProductName(name: string) {
   return name.replace(/\s+\d+(?:틴|개)$/, "").replace(/^ritmore\s+/, "")
-}
-
-export function relatedTinSlugs(slug: string) {
-  const key = internalProductSlug(slug)
-  if (!isTinFamily(key)) return null
-  return TIN_FAMILY.filter((item) => item.slug !== key && isCustomerTinSlug(item.slug)).map((item) => item.slug)
 }

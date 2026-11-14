@@ -43,16 +43,6 @@ export function ReviewPages({ reviews }: { reviews: ReviewCard[] }) {
   const [page, setPage] = useState(0)
   const [dragPx, setDragPx] = useState(0)
   const [dragging, setDragging] = useState(false)
-  const signature = reviews.map((review) => review.key).join("|")
-  const [seenKey, setSeenKey] = useState(signature)
-  if (seenKey !== signature) {
-    setSeenKey(signature)
-    setPage(0)
-    setDragPx(0)
-    setDragging(false)
-    drag.current = { id: -1, x: 0, y: 0, axis: null }
-  }
-
   const pages = chunk(reviews, PAGE_SIZE)
   const pageCount = pages.length
   const index = pageCount === 0 ? 0 : Math.min(page, pageCount - 1)

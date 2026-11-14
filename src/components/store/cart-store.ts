@@ -1,15 +1,9 @@
+import { getProductBySlug } from "@/lib/catalog"
 import { clampQty } from "@/lib/qty"
 
 export type CartItem = { slug: string; qty: number }
 
 const KEY = "storelab-cart"
-export const CART_COOKIE = "lv_cart"
-const CART_COOKIE_MAX_AGE = 60 * 60 * 24 * 30
-
-function persistCartCookie(items: CartItem[]) {
-  const maxAge = items.length === 0 ? 0 : CART_COOKIE_MAX_AGE
-  document.cookie = `${CART_COOKIE}=${encodeURIComponent(itemsQuery(items))}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
-}
 
 export function readCart(): CartItem[] {
   if (typeof window === "undefined") return []
@@ -30,7 +24,6 @@ export function readCart(): CartItem[] {
 
 export function writeCart(items: CartItem[]) {
   localStorage.setItem(KEY, JSON.stringify(items))
-  persistCartCookie(items)
   window.dispatchEvent(new Event("storelab-cart"))
 }
 
@@ -58,4 +51,30 @@ export function cartCount(items = readCart()) {
 
 export function itemsQuery(items: CartItem[]) {
   return items.map((item) => `${item.slug}:${item.qty}`).join(",")
+}
+
+export function parseItems(raw: string | null) {
+  if (!raw) return []
+  return raw.split(",", 12).flatMap((part) => {
+    const [slug, qty] = part.split(":")
+    return /^[a-z0-9][a-z0-9-]{0,79}$/.test(slug)
+      ? [{ slug, qty: clampQty(Number(qty)) }]
+      : []
+  })
+}
+
+export function priceItems(items: CartItem[]) {
+  const lines = new Map<string, { slug: string; qty: number; name: string; price: number }>()
+  for (const { slug, qty } of items) {
+    const product = getProductBySlug(slug)
+    if (!product) continue
+    const currentQty = lines.get(product.slug)?.qty ?? 0
+    lines.set(product.slug, {
+      slug: product.slug,
+      qty: clampQty(currentQty + qty),
+      name: product.name,
+      price: product.basePrice,
+    })
+  }
+  return Array.from(lines.values())
 }

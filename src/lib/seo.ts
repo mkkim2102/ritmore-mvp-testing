@@ -54,13 +54,8 @@ export function isSiteIndexable() {
   return process.env.NEXT_PUBLIC_SITE_INDEXABLE === "true"
 }
 
-export function isPreviewQuery(value: string | string[] | undefined) {
-  const raw = Array.isArray(value) ? value[0] : value
-  return raw === "1"
-}
-
-export function allowIndex(preview = false) {
-  return isSiteIndexable() && !preview
+export function allowIndex() {
+  return isSiteIndexable()
 }
 
 export function productTitle(name: string) {
@@ -204,6 +199,7 @@ export function productStructuredData(input: {
       url: pageUrl,
       priceCurrency: "KRW",
       price: String(input.basePrice),
+      availability: "https://schema.org/OutOfStock",
     }
   }
   return {

@@ -3,12 +3,12 @@ import { productPath } from "@/lib/bundles"
 import { listProducts } from "@/lib/catalog"
 import { absoluteUrl, isSiteIndexable } from "@/lib/seo"
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-static"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   if (!isSiteIndexable()) return []
 
-  const products = listProducts().filter((product) => product.status === "active")
+  const products = listProducts()
   return [
     { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
     { url: absoluteUrl("/products"), changeFrequency: "weekly", priority: 0.9 },

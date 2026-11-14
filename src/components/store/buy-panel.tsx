@@ -22,16 +22,6 @@ import { cn } from "@/lib/utils"
 /** Header wordmark fill (`public/brand/ritmore.svg`) and the brand-story navy `#17364A`. */
 const brandNavyFill = "border-[#17364A] bg-[#17364A] text-white hover:bg-[#17364A]/90"
 
-function remember(step: "buy_open" | "buy_click" | "add_to_cart", slug: string, qty: number) {
-  const safeQty = clampQty(qty)
-  void fetch("/api/track", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    keepalive: true,
-    body: JSON.stringify({ step, path: window.location.pathname, productSlug: slug, qty: safeQty }),
-  }).catch(() => undefined)
-}
-
 type BuyContextValue = {
   name: string
   qty: number
@@ -245,10 +235,7 @@ export function ProductBuyProvider({
     setQtyState(1)
   }, [configIndex])
 
-  const openSheet = useCallback(() => {
-    setSheetOpen(true)
-    remember("buy_open", activeSlug, qty)
-  }, [activeSlug, qty])
+  const openSheet = useCallback(() => setSheetOpen(true), [])
   const closeSheet = useCallback(() => setSheetOpen(false), [])
   const setConfigIndex = useCallback(
     (index: number, syncUrl = true) => {
@@ -612,9 +599,9 @@ function BuySheet() {
     purchaseLines.length > 0 && purchaseLines.every((line) => line.compareAt != null)
       ? purchaseLines.reduce((sum, line) => sum + (line.compareAt ?? 0) * line.qty, 0)
       : null
-  const projectHref =
+  const purchaseHref =
     purchaseLines.length > 0
-      ? `/project?items=${itemsQuery(purchaseLines.map((line) => ({ slug: line.slug, qty: line.qty })))}`
+      ? `/purchase?items=${encodeURIComponent(itemsQuery(purchaseLines))}`
       : ""
 
   function buyNow() {
@@ -622,7 +609,6 @@ function BuySheet() {
     if (directBuy.length === 1) {
       writeStackToCart(directBuy, managedSlugs(configurations, selectedSlug))
     }
-    for (const line of purchaseLines) remember("buy_click", line.slug, line.qty)
   }
 
   useEffect(() => {
@@ -688,7 +674,6 @@ function BuySheet() {
     if (!nextChoice) return
     dirty.current = true
     setLines((current) => stackLine(current, nextChoice))
-    remember("add_to_cart", nextChoice.slug, nextChoice.qty)
   }
 
   function changeLineQty(slug: string, nextQty: number) {
@@ -818,10 +803,10 @@ function BuySheet() {
             >
               담기
             </button>
-            {projectHref ? (
+            {purchaseHref ? (
               <a
-                href={projectHref}
-                data-cart-buy={directBuy.length === 1 ? "direct" : "project"}
+                href={purchaseHref}
+                data-cart-buy={directBuy.length === 1 ? "direct" : "purchase"}
                 data-buy-slug={purchaseLines.map((line) => line.slug).join(",")}
                 className={cn(buttonVariants(), brandNavyFill, "h-12 min-w-0 px-2 text-sm")}
                 onClick={buyNow}

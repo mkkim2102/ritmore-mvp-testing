@@ -6,7 +6,7 @@ export const metadata: Metadata = publicMetadata({
   title: "브랜드 | 리트모어",
   description: "내 리듬에 맞게, 나의 페이스대로. your rhythm, your pace.",
   path: "/brand",
-  index: allowIndex(false),
+  index: allowIndex(),
 })
 
 export default function BrandPage() {

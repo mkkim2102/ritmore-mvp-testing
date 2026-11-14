@@ -1,21 +1,17 @@
-# ritmore MVP 테스트 스토어
+# ritmore MVP 스토어
 
-리트모어 상품 화면과 구매 흐름을 시험하는 Next.js 앱입니다. 실험 데이터는 로컬 SQLite 파일에 저장됩니다.
+리트모어의 상품, 상세 이미지, 구매 안내를 제공하는 정적 Next.js 사이트입니다. 장바구니는 브라우저에 저장되며, 금액은 `src/lib/bundles.ts`의 공개 가격으로 계산합니다. 출시 전이라 주문과 결제는 받지 않습니다.
 
-## 실행
+## 로컬 실행
 
-Node.js 24 기준입니다.
+Node.js 24에서 `npm ci` 후 `npm run dev`를 실행하면 [스토어](http://127.0.0.1:43117)를 열 수 있습니다. `npm run build`는 `out/`에 정적 파일을 생성합니다.
 
-```bash
-npm ci
-npm run dev
-```
+## Cloudflare Pages
 
-브라우저에서 [테스트 스토어](http://127.0.0.1:43117)를 엽니다.
+- GitHub 저장소 `mkkim2102/ritmore-mvp-testing`의 `main`
+- 프레임워크 사전 설정 `Next.js (Static HTML Export)` 또는 `None`
+- 빌드 명령 `npm run build`, 산출 디렉터리 `out`
+- 환경 변수 `NODE_VERSION=24`, `NEXT_PUBLIC_SITE_URL=https://ritmoremint.com`
+- 예전 상품·유입 주소는 `public/_redirects`에서 처리합니다.
 
-[운영 화면](http://127.0.0.1:43117/dashboard)을 사용하려면 `.env.example`을 `.env.local`로 복사한 뒤 `DASHBOARD_PASSWORD`와 `AUTH_SECRET`을 설정합니다. 세션 서명 키는 `openssl rand -hex 32`로 생성할 수 있습니다.
-
-## 시험 주소
-
-- 인스타그램 스토리 기본가 **3,990원** `/?link=ig-story&utm_source=instagram&utm_medium=story&utm_campaign=price-1`
-- 유튜브 설명란 상품 상세 기본가 **3,990원** `/products/buy1?link=yt-desc&utm_source=youtube&utm_medium=description&utm_campaign=price-1`
+Fly의 SQLite 백업은 사이트 소스 및 배포 산출물과 별도로 보관합니다.

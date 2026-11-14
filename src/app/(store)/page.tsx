@@ -1,37 +1,24 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { SCENE_SLIDE_TEST, SceneDeck } from "@/components/store/scene-deck"
-import { Tracker } from "@/components/store/tracker"
 import { buttonVariants } from "@/components/ui/button"
-import { getProductBySlug, resolveOffer } from "@/lib/catalog"
-import { getRequestContext } from "@/lib/request"
-import { allowIndex, HOME_DESCRIPTION, HOME_TITLE, isPreviewQuery, publicMetadata } from "@/lib/seo"
+import { getProductBySlug } from "@/lib/catalog"
+import { allowIndex, HOME_DESCRIPTION, HOME_TITLE, publicMetadata } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams: Promise<{ preview?: string | string[] }>
-}): Promise<Metadata> {
-  const query = await searchParams
-  const context = await getRequestContext()
-  return publicMetadata({
-    title: HOME_TITLE,
-    description: HOME_DESCRIPTION,
-    path: "/",
-    index: allowIndex(isPreviewQuery(query.preview) || context.preview),
-  })
-}
+export const metadata: Metadata = publicMetadata({
+  title: HOME_TITLE,
+  description: HOME_DESCRIPTION,
+  path: "/",
+  index: allowIndex(),
+})
 
-export default async function HomePage() {
-  const context = await getRequestContext()
+export default function HomePage() {
   const product = getProductBySlug("sample-a")
-  const offer = product && product.status === "active" ? resolveOffer(product, context.touch) : null
 
   return (
     <div className="bg-white">
-      <Tracker />
-      {product && offer ? (
+      {product ? (
         <SceneDeck>
           <section
             data-home-main

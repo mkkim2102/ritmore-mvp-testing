@@ -6,7 +6,7 @@ export const metadata: Metadata = publicMetadata({
   title: "이용안내 | 리트모어",
   description: "리트모어의 주문, 결제, 배송, 교환, 환불 안내입니다.",
   path: "/guide",
-  index: allowIndex(false),
+  index: allowIndex(),
 })
 
 export default function GuidePage() {

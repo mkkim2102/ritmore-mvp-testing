@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next"
 import { absoluteUrl, isSiteIndexable, siteOrigin } from "@/lib/seo"
 
+export const dynamic = "force-static"
+
 export default function robots(): MetadataRoute.Robots {
   if (!isSiteIndexable()) {
     return {
@@ -15,7 +17,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/dashboard", "/cart", "/purchase", "/checkout", "/r", "/api/"],
+      disallow: ["/cart", "/purchase", "/checkout", "/project"],
     },
     sitemap: absoluteUrl("/sitemap.xml"),
     host: siteOrigin(),

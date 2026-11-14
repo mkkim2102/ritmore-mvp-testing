@@ -1,27 +1,17 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { PriceTag } from "@/components/store/price-tag"
-import { Tracker } from "@/components/store/tracker"
 import { packChoiceLabel, productPath, shelfProductName, tinCountForSlug } from "@/lib/bundles"
 import { tinPurchaseOptions } from "@/lib/catalog"
 import { listPhotoFor } from "@/lib/list-photos"
-import { getRequestContext } from "@/lib/request"
-import { allowIndex, isPreviewQuery, PRODUCTS_DESCRIPTION, PRODUCTS_TITLE, publicMetadata } from "@/lib/seo"
+import { allowIndex, PRODUCTS_DESCRIPTION, PRODUCTS_TITLE, publicMetadata } from "@/lib/seo"
 
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams: Promise<{ preview?: string | string[] }>
-}): Promise<Metadata> {
-  const query = await searchParams
-  const context = await getRequestContext()
-  return publicMetadata({
-    title: PRODUCTS_TITLE,
-    description: PRODUCTS_DESCRIPTION,
-    path: "/products",
-    index: allowIndex(isPreviewQuery(query.preview) || context.preview),
-  })
-}
+export const metadata: Metadata = publicMetadata({
+  title: PRODUCTS_TITLE,
+  description: PRODUCTS_DESCRIPTION,
+  path: "/products",
+  index: allowIndex(),
+})
 
 function ChoicePhoto({ src, alt, focus }: { src: string; alt: string; focus?: string }) {
   const path = src.trim()
@@ -41,9 +31,8 @@ function ChoicePhoto({ src, alt, focus }: { src: string; alt: string; focus?: st
   )
 }
 
-export default async function ProductsPage() {
-  const context = await getRequestContext()
-  const choices = tinPurchaseOptions(context.touch).map((item) => ({
+export default function ProductsPage() {
+  const choices = tinPurchaseOptions().map((item) => ({
     slug: item.slug,
     label: item.label,
     name: shelfProductName(item.name),
@@ -53,7 +42,6 @@ export default async function ProductsPage() {
 
   return (
     <div className="bg-white text-[#111111]">
-      <Tracker step="catalog_view" />
       <div className="mx-auto w-full max-w-[58rem] px-4 py-6 lg:py-9">
         <h1 className="text-xl leading-tight text-[#111111] lg:text-2xl">상품</h1>
         {choices.length === 0 ? (

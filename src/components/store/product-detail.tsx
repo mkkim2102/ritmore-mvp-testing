@@ -1,19 +1,14 @@
 import Link from "next/link"
 import { BuyPanel, MobileBuyBar, ProductBuyProvider, SelectedProductTitle } from "@/components/store/buy-panel"
-import { InquiryForm } from "@/components/store/inquiry-form"
 import { ProductGallery } from "@/components/store/product-gallery"
 import { TinMark } from "@/components/store/product-face"
-import { ReviewForm } from "@/components/store/review-form"
 import { ReviewPages } from "@/components/store/review-pages"
-import { ReviewTracker } from "@/components/store/review-tracker"
-import { Tracker } from "@/components/store/tracker"
 import { isTinFamily, type TinChoice } from "@/lib/bundles"
-import { communityDate, communityKey, listInquiries } from "@/lib/community"
 import { detailSlidesFor } from "@/lib/product-slides"
 import { TIN_DETAIL_PAGES } from "@/lib/detail-images"
 import { landingFor } from "@/lib/landing"
 import { guideSections } from "@/lib/shop-guide"
-import type { Offer, Product } from "@/lib/types"
+import type { Product } from "@/lib/types"
 
 function StarRow({ score }: { score: string }) {
   const value = Math.max(0, Math.min(5, Math.round(Number(score) || 0)))
@@ -30,20 +25,17 @@ function StarRow({ score }: { score: string }) {
 
 export function ProductDetail({
   product,
-  offer,
   configurations = [],
   packOnPage = false,
   optionsInSheet = false,
 }: {
   product: Product
-  offer: Offer
   configurations?: TinChoice[]
   packOnPage?: boolean
   optionsInSheet?: boolean
 }) {
   const landing = landingFor(product)
   const sharedCopy = isTinFamily(product.slug)
-  const inquiries = listInquiries(communityKey(product.slug))
   const sampleCards = landing.reviews.map((review, reviewIndex) => ({
     key: `${review.name}-${review.date}-${reviewIndex}`,
     source: "sample" as const,
@@ -59,8 +51,8 @@ export function ProductDetail({
     <ProductBuyProvider
       slug={product.slug}
       name={product.name}
-      price={offer.price}
-      compareAt={offer.compareAtPrice}
+      price={product.basePrice}
+      compareAt={product.compareAtPrice}
       flavors={landing.flavors}
       configurations={configurations}
       optionsInSheet={optionsInSheet}
@@ -68,8 +60,6 @@ export function ProductDetail({
       syncPackUrl={packOnPage}
       shippingNote={sharedCopy ? landing.shipping : null}
     >
-      <Tracker step="product_view" productSlug={product.slug} />
-      <ReviewTracker productSlug={product.slug} />
       <div
         data-product-frame
         className="lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,10fr)_minmax(14rem,3.5fr)] lg:items-stretch lg:gap-x-8 lg:px-4 lg:py-8"
@@ -118,115 +108,82 @@ export function ProductDetail({
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-muted-foreground">후기를 남길 수 있습니다.</p>
+                <p className="text-sm text-muted-foreground">표시할 후기가 없습니다.</p>
               )}
             </div>
           </div>
-        <div className="min-w-0">
-      <nav className="sticky top-14 z-10 border-y border-border bg-background/95 backdrop-blur md:top-16">
-        <div className="mx-auto grid max-w-6xl grid-cols-4 px-4 text-sm lg:max-w-none lg:px-0">
-          {[
-            ["#detail", "상세"],
-            ["#reviews", "후기"],
-            ["#purchase", "구매안내"],
-            ["#faq", "문의"],
-          ].map(([href, label]) => (
-            <a key={href} href={href} className="flex justify-center border-b-2 border-transparent py-3 whitespace-nowrap hover:border-foreground">
-              {label}
-            </a>
-          ))}
-        </div>
-      </nav>
+          <div className="min-w-0">
+            <nav className="sticky top-14 z-10 border-y border-border bg-background/95 backdrop-blur md:top-16">
+              <div className="mx-auto grid max-w-6xl grid-cols-3 px-4 text-sm lg:max-w-none lg:px-0">
+                {[
+                  ["#detail", "상세"],
+                  ["#reviews", "후기"],
+                  ["#purchase", "구매안내"],
+                ].map(([href, label]) => (
+                  <a key={href} href={href} className="flex justify-center border-b-2 border-transparent py-3 whitespace-nowrap hover:border-foreground">
+                    {label}
+                  </a>
+                ))}
+              </div>
+            </nav>
 
-      <section
-        id="detail"
-        className={
-          sharedCopy
-            ? "scroll-mt-32"
-            : "mx-auto max-w-6xl scroll-mt-32 space-y-10 px-4 py-14 lg:max-w-none lg:px-0"
-        }
-      >
-        {sharedCopy ? (
-          <div data-detail-images className="flex w-full flex-col gap-0">
-            {TIN_DETAIL_PAGES.map((image, index) => (
-              <img
-                key={image.src}
-                src={image.src}
-                alt={image.alt}
-                width={2580}
-                height={3300}
-                loading="lazy"
-                decoding="async"
-                data-detail-slot={index + 1}
-                className="block h-auto w-full max-w-full"
-              />
-            ))}
-          </div>
-        ) : null}
-      </section>
-
-      <section id="reviews" className="scroll-mt-40 border-t border-border bg-card" data-review-count={reviewCount}>
-        <div className="mx-auto max-w-6xl px-4 py-14 lg:max-w-none lg:px-0">
-          <div className="flex items-end justify-between gap-4">
-            <h2 className="font-serif text-3xl">후기</h2>
-            <p className="text-sm text-muted-foreground">후기 {reviewCount}개</p>
-          </div>
-          {reviewCount > 0 ? <ReviewPages reviews={sampleCards} /> : (
-            <p className="mt-8 text-sm leading-6 text-muted-foreground" data-review-empty>
-              후기를 남길 수 있습니다.
-            </p>
-          )}
-          <ReviewForm slug={product.slug} />
-        </div>
-      </section>
-
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-start border-t border-border lg:max-w-none lg:grid-cols-2 lg:gap-x-12">
-      <section id="purchase" className="scroll-mt-40 bg-white px-4 py-14 lg:min-w-0 lg:px-0">
-          <p className="text-xs font-medium text-muted-foreground">구매안내</p>
-          <h2 className="mt-2 font-serif text-3xl text-[#111111]">배송, 교환, 환불</h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-1">
-            {guideSections
-              .filter((section) => section.id !== "order")
-              .map((section) => (
-                <article key={section.id} id={section.id} className="scroll-mt-40">
-                  <h3 className="font-medium text-[#111111]">{section.title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    {section.id === "ship" && sharedCopy ? landing.shipping : section.body}
-                  </p>
-                </article>
-              ))}
-          </div>
-      </section>
-
-      <section id="faq" className="scroll-mt-40 border-t border-border px-4 py-14 lg:min-w-0 lg:border-t-0 lg:px-0">
-        <h2 className="font-serif text-3xl">문의</h2>
-        {inquiries.length > 0 ? (
-          <div className="mt-8 space-y-4" data-inquiry-list>
-            {inquiries.map((inquiry) => (
-              <article
-                key={inquiry.id}
-                data-inquiry={inquiry.id}
-                data-answered={inquiry.answer ? "yes" : "no"}
-                className="min-w-0 rounded-3xl border border-border p-5"
-              >
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span>{inquiry.name || "익명"}</span>
-                  <span className="text-xs text-muted-foreground">{communityDate(inquiry.createdAt)}</span>
+            <section
+              id="detail"
+              className={
+                sharedCopy
+                  ? "scroll-mt-32"
+                  : "mx-auto max-w-6xl scroll-mt-32 space-y-10 px-4 py-14 lg:max-w-none lg:px-0"
+              }
+            >
+              {sharedCopy ? (
+                <div data-detail-images className="flex w-full flex-col gap-0">
+                  {TIN_DETAIL_PAGES.map((image, index) => (
+                    <img
+                      key={image.src}
+                      src={image.src}
+                      alt={image.alt}
+                      width={2580}
+                      height={3300}
+                      loading="lazy"
+                      decoding="async"
+                      data-detail-slot={index + 1}
+                      className="block h-auto w-full max-w-full"
+                    />
+                  ))}
                 </div>
-                <p className="mt-4 leading-7 break-words whitespace-pre-wrap">{inquiry.body}</p>
-                {inquiry.answer ? (
-                  <div className="mt-4 border-t border-border pt-4" data-answer>
-                    <p className="text-xs font-medium text-muted-foreground">답변</p>
-                    <p className="mt-2 leading-7 break-words whitespace-pre-wrap">{inquiry.answer}</p>
-                  </div>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        ) : null}
-        <InquiryForm slug={product.slug} />
-      </section>
-      </div>
+              ) : null}
+            </section>
+
+            <section id="reviews" className="scroll-mt-40 border-t border-border bg-card" data-review-count={reviewCount}>
+              <div className="mx-auto max-w-6xl px-4 py-14 lg:max-w-none lg:px-0">
+                <div className="flex items-end justify-between gap-4">
+                  <h2 className="font-serif text-3xl">후기</h2>
+                  <p className="text-sm text-muted-foreground">후기 {reviewCount}개</p>
+                </div>
+                {reviewCount > 0 ? <ReviewPages key={product.slug} reviews={sampleCards} /> : (
+                  <p className="mt-8 text-sm leading-6 text-muted-foreground" data-review-empty>
+                    표시할 후기가 없습니다.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            <section id="purchase" className="scroll-mt-40 border-t border-border bg-white px-4 py-14 lg:min-w-0 lg:px-0">
+                <p className="text-xs font-medium text-muted-foreground">구매안내</p>
+                <h2 className="mt-2 font-serif text-3xl text-[#111111]">배송, 교환, 환불</h2>
+                <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-1">
+                  {guideSections
+                    .filter((section) => section.id !== "order")
+                    .map((section) => (
+                      <article key={section.id} id={section.id} className="scroll-mt-40">
+                        <h3 className="font-medium text-[#111111]">{section.title}</h3>
+                        <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                          {section.id === "ship" && sharedCopy ? landing.shipping : section.body}
+                        </p>
+                      </article>
+                    ))}
+                </div>
+            </section>
         </div>
         </div>
         <aside className="hidden min-w-0 lg:block">

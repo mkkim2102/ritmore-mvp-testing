@@ -1,0 +1,17 @@
+/products/sample-a /products/buy1 301
+/products/sample-a-3 /products/buy2 301
+/products/sample-a-6 /products/buy3 301
+/products/sample-a-12 /products/buy1 302
+/checkout/done /purchase/done 301
+/checkout /purchase 301
+/r/buy1 /products/buy1 302
+/r/buy2 /products/buy2 302
+/r/buy3 /products/buy3 302
+/r/purchase /purchase 302
+/r/h2v8 /products/buy1 302
+/r/link-91b7 /products/buy1 302
+/r/n7q4 /products/buy1 302
+/r/r6c1 /products/buy1 302
+/r/w3m9 /products/buy1 302
+/r/yt-desc /products/buy1 302
+/r/* / 302
